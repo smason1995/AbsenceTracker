@@ -1,0 +1,85 @@
+[
+  {
+    "name": "Ethane Dixon",
+    "employeeId": "1",
+    "active": true,
+    "absences": [
+      {
+        "code": "C",
+        "comment": "hgjh",
+        "date": "2025-07-01"
+      },
+      {
+        "code": "C",
+        "comment": "hgfdhgdfg",
+        "date": "2025-07-04"
+      }
+    ]
+  },
+  {
+    "name": "Sydney Mason",
+    "employeeId": "2",
+    "active": true,
+    "absences": [
+      {
+        "code": "T",
+        "comment": "dfgh",
+        "date": "2025-07-02",
+        "minutes": "35"
+      },
+      {
+        "code": "C",
+        "comment": "rtwetr",
+        "date": "2025-07-06"
+      },
+      {
+        "code": "E",
+        "minutes": "",
+        "comment": "wetrte",
+        "date": "2025-07-06"
+      },
+      {
+        "code": "T",
+        "comment": "fasgfrde",
+        "date": "2025-02-03",
+        "minutes": "7423"
+      }
+    ]
+  },
+  {
+    "name": "Katt Boss",
+    "employeeId": "3",
+    "active": true,
+    "absences": [
+      {
+        "code": "PI",
+        "comment": "iiii",
+        "date": "2025-07-01"
+      },
+      {
+        "code": "T",
+        "comment": "tretewr",
+        "date": "2025-07-03",
+        "minutes": "5"
+      }
+    ]
+  },
+  {
+    "name": "shawn",
+    "employeeId": "4",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "trigger",
+    "employeeId": "5",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "happy",
+    "employeeId": "6",
+    "active": true,
+    "absences": []
+  }
+]
