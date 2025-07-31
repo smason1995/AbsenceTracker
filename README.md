@@ -28,3 +28,6 @@ Note: At this time, the application only supports Windows builds (made it for fr
 - Fix known bug that breaks a couple user input fields (requires app restart to resolve)
 - Remove manual folder/file placements from the build process
 - Cleanup up the UI
+
+#### Legal
+This application is licensed using GPL Version 3
