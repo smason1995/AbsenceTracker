@@ -696,7 +696,7 @@ function ManageJsonFilesPopup({ trackerData, setTrackerData, onClose }) {
           <br />
           <button onClick={handleAddAbsenceCode}>Add Absence Code</button>
           <br /><br />
-          <p>Note: Absence codes starting with 'T' are treated as time-based absences.</p>
+          <p>Note: Absence codes starting with 'T' are<br></br>treated as time-based absences.</p>
         </>
       )}
       <br /><br />
