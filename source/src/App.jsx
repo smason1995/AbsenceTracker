@@ -32,19 +32,19 @@ function GetDateString(year, monthIndex, day) {
 function AbsenceTable({ trackerData, daysInMonth, month, year, onCellClick }) {
   const months = Array.from({ length: 12 }, (_, i) => dayjs().month(i).format('MMMM'))
   return (
-    <table>
+    <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1rem', maxHeight: '200px', overflowY: 'auto', display: 'block' }}>
       <thead>
         <tr>
-          <th style={{ minWidth: '140px', whiteSpace: 'nowrap' }}>Employee</th>
+          <th className="sticky-col" style={{ minWidth: '140px', whiteSpace: 'nowrap', top: 0, left: 0, zIndex: 3 }}>Employee</th>
           {daysInMonth.map(day => (
-            <th key={day} style={{ minWidth: '48px', whiteSpace: 'nowrap' }}>{day}</th>
+            <th className="sticky-col" key={day} style={{ minWidth: '48px', whiteSpace: 'nowrap', top: 0, zIndex: 2 }}>{day}</th>
           ))}
         </tr>
       </thead>
       <tbody>
         {trackerData.filter(emp => emp.active).map(emp => (
           <tr key={emp.employeeId}>
-            <td style={{ minWidth: '140px', whiteSpace: 'nowrap' }}>{emp.name}</td>
+            <td className="sticky-col" style={{ minWidth: '140px', whiteSpace: 'nowrap', left: 0, zIndex: 1 }}>{emp.name}</td>
             {daysInMonth.map(day => {
               const dateStr = GetDateString(year, months.indexOf(month), day)
               const absencesForDay = emp.absences?.filter(a => a.date === dateStr) || []
@@ -77,14 +77,15 @@ function AbsenceSummaryTable({ trackerData, absenceCodeOptions, month, year }) {
   const months = Array.from({ length: 12 }, (_, i) => dayjs().month(i).format('MMMM'))
   const monthIndex = months.indexOf(month)
   return (
-    <table style={{ marginLeft: '2rem', borderCollapse: 'collapse' }}>
+    <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1rem', maxHeight: '200px', overflowY: 'auto', display: 'block' }}>
       <thead>
         <tr>
-          <th style={{ minWidth: '140px', whiteSpace: 'nowrap', border: '1px solid #ccc', padding: '4px' }}>Employee</th>
+          <th className="sticky-col" style={{ minWidth: '140px', whiteSpace: 'nowrap', border: '1px solid #ccc', padding: '4px', top: 0, left: 0, zIndex: 3 }}>Employee</th>
           {absenceCodeOptions.map(opt => (
             <th
+              className='sticky-col'
               key={opt.code}
-              style={{ minWidth: '80px', whiteSpace: 'nowrap', border: '1px solid #ccc', padding: '4px' }}
+              style={{ minWidth: '80px', whiteSpace: 'nowrap', border: '1px solid #ccc', padding: '4px', top: 0, zIndex: 2 }}
             >
               {opt.value}
             </th>
@@ -94,7 +95,7 @@ function AbsenceSummaryTable({ trackerData, absenceCodeOptions, month, year }) {
       <tbody>
         {trackerData.filter(emp => emp.active).map(emp => (
           <tr key={emp.employeeId}>
-            <td style={{ minWidth: '140px', whiteSpace: 'nowrap', border: '1px solid #ccc', padding: '4px' }}>{emp.name}</td>
+            <td className="sticky-col" style={{ minWidth: '140px', whiteSpace: 'nowrap', border: '1px solid #ccc', padding: '4px', left: 0, zIndex: 1 }}>{emp.name}</td>
             {absenceCodeOptions.map(opt => {
               const count = emp.absences
                 ?.filter(a => {
@@ -136,19 +137,19 @@ function DailyAbsenceTallyTable({ trackerData, absenceCodeOptions, daysInMonth, 
   }
 
   return (
-    <table style={{ marginTop: '2rem', borderCollapse: 'collapse' }}>
+    <table style={{ marginTop: '2rem', borderCollapse: 'collapse', maxWidth: '100%', overflowX: 'auto', display: 'block' }}>
       <thead>
         <tr>
-          <th style={{ minWidth: '100px', whiteSpace: 'nowrap', border: '1px solid #ccc', padding: '4px' }}>Absence Code</th>
+          <th className="sticky-col" style={{ minWidth: '100px', whiteSpace: 'nowrap', border: '1px solid #ccc', padding: '4px', top: 0, left: 0, zIndex: 3 }}>Absence Code</th>
           {daysInMonth.map(day => (
-            <th key={day} style={{ minWidth: '48px', whiteSpace: 'nowrap', border: '1px solid #ccc', padding: '4px' }}>{day}</th>
+            <th key={day} style={{ minWidth: '48px', whiteSpace: 'nowrap', border: '1px solid #ccc', padding: '4px', zIndex: 2 }}>{day}</th>
           ))}
         </tr>
       </thead>
       <tbody>
         {absenceCodeOptions.map(opt => (
           <tr key={opt.code}>
-            <td style={{ minWidth: '100px', whiteSpace: 'nowrap', border: '1px solid #ccc', padding: '4px' }}>{opt.code}</td>
+            <td className="sticky-col" style={{ minWidth: '100px', whiteSpace: 'nowrap', border: '1px solid #ccc', padding: '4px', left: 0, zIndex: 1 }}>{opt.code}</td>
             {daysInMonth.map(day => (
               <td
                 key={day}

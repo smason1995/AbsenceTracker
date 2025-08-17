@@ -29,6 +29,19 @@
   border-radius: 8px;
 }
 
+.sticky-header {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 3;
+}
+
+.sticky-col {
+  position: sticky;
+  background: #fff; /* Optional: ensures it doesn't blend with other cells */
+  z-index: 2; /* Ensures it stays above other cells */
+}
+
 html,
 body {
   margin: 0;
@@ -42,7 +55,6 @@ body {
 }
 
 th {
-  position: sticky;
   top: 0;
   background: white;
   z-index: 2;

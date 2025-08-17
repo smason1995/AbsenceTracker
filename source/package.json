@@ -1,7 +1,7 @@
 {
   "name": "absencetracker",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "type": "module",
   "description": "A simple Electron app for tracking employee absences",
   "main": "main.js",
