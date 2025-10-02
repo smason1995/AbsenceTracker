@@ -1,5 +1,8 @@
 # Absence Tracker
 
+## IMPORTANT
+Migrating from using JSON files to store data with all management on application side to SQLite to separate data storage and manage from the application more clearly, as well as increasing performance for various features when under heavy loads.
+
 ### Description
 This application is designed to track absences and give high level reporting capabilities on absences. Originally made to help a friend manage employees, this app is flexible enough to be used in many absence contexts.
 
