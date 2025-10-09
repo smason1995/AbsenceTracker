@@ -1,84 +1,247 @@
 [
   {
-    "name": "Ethane Dixon",
-    "employeeId": "1",
-    "active": true,
-    "absences": [
-      {
-        "code": "C",
-        "comment": "hgjh",
-        "date": "2025-07-01"
-      },
-      {
-        "code": "C",
-        "comment": "hgfdhgdfg",
-        "date": "2025-07-04"
-      }
-    ]
-  },
-  {
-    "name": "Sydney Mason",
-    "employeeId": "2",
-    "active": true,
-    "absences": [
-      {
-        "code": "T",
-        "comment": "dfgh",
-        "date": "2025-07-02",
-        "minutes": "35"
-      },
-      {
-        "code": "C",
-        "comment": "rtwetr",
-        "date": "2025-07-06"
-      },
-      {
-        "code": "E",
-        "minutes": "",
-        "comment": "wetrte",
-        "date": "2025-07-06"
-      },
-      {
-        "code": "T",
-        "comment": "fasgfrde",
-        "date": "2025-02-03",
-        "minutes": "7423"
-      }
-    ]
-  },
-  {
-    "name": "Katt Boss",
-    "employeeId": "3",
-    "active": true,
-    "absences": [
-      {
-        "code": "PI",
-        "comment": "iiii",
-        "date": "2025-07-01"
-      },
-      {
-        "code": "T",
-        "comment": "tretewr",
-        "date": "2025-07-03",
-        "minutes": "5"
-      }
-    ]
-  },
-  {
-    "name": "shawn",
-    "employeeId": "4",
+    "name": "ABDULHAKIM MOHAMED",
+    "employeeId": "10",
     "active": true,
     "absences": []
   },
   {
-    "name": "trigger",
-    "employeeId": "5",
+    "name": "AKEELAH BARLOW",
+    "employeeId": "11",
     "active": true,
     "absences": []
   },
   {
-    "name": "happy",
-    "employeeId": "6",
+    "name": "ALBERT RIVAS",
+    "employeeId": "12",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "ANELA TASI",
+    "employeeId": "13",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "BRITTNEY ROSS",
+    "employeeId": "14",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "BRYANNA MARTIN",
+    "employeeId": "15",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "CHRISTIAN DAVIDSON",
+    "employeeId": "16",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "CHRISTIAN LEGGETT",
+    "employeeId": "17",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "DARREL MOUTON",
+    "employeeId": "18",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "DEON CROSBY",
+    "employeeId": "19",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "ELIZABETH CASILLIAS",
+    "employeeId": "20",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "ERIC GARDNER",
+    "employeeId": "21",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "ISAIAH GLOVER",
+    "employeeId": "22",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "JACHQUANAE MATTHEWS",
+    "employeeId": "23",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "JALACHI JACKSON",
+    "employeeId": "24",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "JAMES FITCZPATRICK",
+    "employeeId": "25",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "JAVIER ROSSEL",
+    "employeeId": "26",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "JENNISON ULUFALE",
+    "employeeId": "27",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "JESTEN GENTRY",
+    "employeeId": "28",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "JURAHN FLETCHER",
+    "employeeId": "29",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "KENNETH BURNS",
+    "employeeId": "30",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "LAQUINCY BRASS",
+    "employeeId": "31",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "LEEANNA CASS",
+    "employeeId": "32",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "MARCUS WILKES",
+    "employeeId": "33",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "MAURICE CARRADINE",
+    "employeeId": "34",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "MILTON SMITH",
+    "employeeId": "35",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "NYCHELLE TELLIS",
+    "employeeId": "36",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "REGGIE TEAGUES",
+    "employeeId": "37",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "RICHARD UNCE",
+    "employeeId": "38",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "ROBERTO MERIANO",
+    "employeeId": "39",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "ROY REYES",
+    "employeeId": "40",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "RYAN MARTINEZ",
+    "employeeId": "41",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "SHGIAR MOFRAD",
+    "employeeId": "42",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "STACY WOODLAND",
+    "employeeId": "43",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "STEVEN ROXAS",
+    "employeeId": "44",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "TAMMY FULLER",
+    "employeeId": "45",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "RIQUEL NEDDLES",
+    "employeeId": "46",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "WILLIAM CLARK",
+    "employeeId": "47",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "COREY RUNNELS",
+    "employeeId": "48",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "JAVAN NATHAN",
+    "employeeId": "49",
+    "active": true,
+    "absences": []
+  },
+  {
+    "name": "TRAVIELL HILL",
+    "employeeId": "50",
     "active": true,
     "absences": []
   }
