@@ -9,12 +9,6 @@ import html2canvas from 'html2canvas'
 const fs = window.require('fs')
 const path = window.require('path')
 
-// Use process.cwd() to get the project root
-const absenceFilePath = path.join(process.cwd(), 'assets', 'AbsenceTracker.json')
-const absenceCodesFilePath = path.join(process.cwd(), 'assets', 'AbsenceCodes.json')
-const absenceCodes = JSON.parse(fs.readFileSync(absenceFilePath, 'utf-8'))
-const absenceCodeOptions = JSON.parse(fs.readFileSync(absenceCodesFilePath, 'utf-8'))
-
 // --- Utility Functions ---
 /** Returns array of day strings for a given month/year */
 function GetDaysArray(monthIndex, year) {
@@ -29,7 +23,7 @@ function GetDateString(year, monthIndex, day) {
 
 // --- Table Components ---
 /** Employee Absence Table */
-function AbsenceTable({ trackerData, daysInMonth, month, year, onCellClick }) {
+function AbsenceTable({ absenceData, daysInMonth, month, year, onCellClick }) {
   const months = Array.from({ length: 12 }, (_, i) => dayjs().month(i).format('MMMM'))
   return (
     <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '1rem', maxHeight: '200px', overflowY: 'auto', display: 'block' }}>
@@ -42,7 +36,7 @@ function AbsenceTable({ trackerData, daysInMonth, month, year, onCellClick }) {
         </tr>
       </thead>
       <tbody>
-        {trackerData.filter(emp => emp.active).map(emp => (
+        {absenceData.filter(emp => emp.active).map(emp => (
           <tr key={emp.employeeId}>
             <td className="sticky-col" style={{ minWidth: '140px', whiteSpace: 'nowrap', left: 0, zIndex: 1 }}>{emp.name}</td>
             {daysInMonth.map(day => {
@@ -73,7 +67,7 @@ function AbsenceTable({ trackerData, daysInMonth, month, year, onCellClick }) {
 }
 
 /** Absence Summary Table */
-function AbsenceSummaryTable({ trackerData, absenceCodeOptions, month, year }) {
+function AbsenceSummaryTable({ absenceData, absenceCodes, month, year }) {
   const months = Array.from({ length: 12 }, (_, i) => dayjs().month(i).format('MMMM'))
   const monthIndex = months.indexOf(month)
   return (
@@ -81,7 +75,7 @@ function AbsenceSummaryTable({ trackerData, absenceCodeOptions, month, year }) {
       <thead>
         <tr>
           <th className="sticky-col" style={{ minWidth: '140px', whiteSpace: 'nowrap', border: '1px solid #ccc', padding: '4px', top: 0, left: 0, zIndex: 3 }}>Employee</th>
-          {absenceCodeOptions.map(opt => (
+          {absenceCodes.map(opt => (
             <th
               className='sticky-col'
               key={opt.code}
@@ -93,10 +87,10 @@ function AbsenceSummaryTable({ trackerData, absenceCodeOptions, month, year }) {
         </tr>
       </thead>
       <tbody>
-        {trackerData.filter(emp => emp.active).map(emp => (
+        {absenceData.filter(emp => emp.active).map(emp => (
           <tr key={emp.employeeId}>
             <td className="sticky-col" style={{ minWidth: '140px', whiteSpace: 'nowrap', border: '1px solid #ccc', padding: '4px', left: 0, zIndex: 1 }}>{emp.name}</td>
-            {absenceCodeOptions.map(opt => {
+            {absenceCodes.map(opt => {
               const count = emp.absences
                 ?.filter(a => {
                   const date = dayjs(a.date)
@@ -123,14 +117,14 @@ function AbsenceSummaryTable({ trackerData, absenceCodeOptions, month, year }) {
 }
 
 /** Daily Absence Tally Table */
-function DailyAbsenceTallyTable({ trackerData, absenceCodeOptions, daysInMonth, month, year }) {
+function DailyAbsenceTallyTable({ absenceData, absenceCodes, daysInMonth, month, year }) {
   const months = Array.from({ length: 12 }, (_, i) => dayjs().month(i).format('MMMM'))
   const monthIndex = months.indexOf(month)
 
   // Helper: tally for each code and day
   function getTally(code, day) {
     const dateStr = GetDateString(year, monthIndex, day)
-    return trackerData.reduce((sum, emp) => {
+    return absenceData.reduce((sum, emp) => {
       if (!emp.active || !emp.absences) return sum
       return sum + emp.absences.filter(a => a.date === dateStr && a.code === code).length
     }, 0)
@@ -147,7 +141,7 @@ function DailyAbsenceTallyTable({ trackerData, absenceCodeOptions, daysInMonth, 
         </tr>
       </thead>
       <tbody>
-        {absenceCodeOptions.map(opt => (
+        {absenceCodes.map(opt => (
           <tr key={opt.code}>
             <td className="sticky-col" style={{ minWidth: '100px', whiteSpace: 'nowrap', border: '1px solid #ccc', padding: '4px', left: 0, zIndex: 1 }}>{opt.code}</td>
             {daysInMonth.map(day => (
@@ -169,7 +163,7 @@ function DailyAbsenceTallyTable({ trackerData, absenceCodeOptions, daysInMonth, 
 function AbsencePopup({
   popupInfo,
   editAbsences,
-  absenceCodeOptions,
+  absenceCodes,
   handleAbsenceChange,
   handleAddAbsence,
   handleDeleteAbsence,
@@ -198,7 +192,7 @@ function AbsencePopup({
                   onChange={e => handleAbsenceChange(idx, 'code', e.target.value)}
                 >
                   <option value="">Select code</option>
-                  {absenceCodeOptions.map(opt => (
+                  {absenceCodes.map(opt => (
                     <option key={opt.code} value={opt.code}>{opt.code}</option>
                   ))}
                 </select>
@@ -236,7 +230,7 @@ function AbsencePopup({
 }
 
 /** Export Data Popup */
-function ExportDataPopup({ trackerData, screenRef, onClose }) {
+function ExportDataPopup({ absenceData, onClose }) {
   const [exportType, setExportType] = useState('')
   const [selectedEmployee, setSelectedEmployee] = useState('')
   const [historyType, setHistoryType] = useState('full')
@@ -246,11 +240,11 @@ function ExportDataPopup({ trackerData, screenRef, onClose }) {
   const [selectedYear, setSelectedYear] = useState('')
 
   const months = Array.from({ length: 12 }, (_, i) => dayjs().month(i).format('MMMM'))
-  const years = Array.from(new Set(trackerData.flatMap(emp => emp.absences?.map(a => dayjs(a.date).year().toString()) || [])))
+  const years = Array.from(new Set(absenceData.flatMap(emp => emp.absences?.map(a => dayjs(a.date).year().toString()) || [])))
 
   function handleExport() {
     if (exportType === 'employee' && selectedEmployee) {
-      const emp = trackerData.find(e => e.name === selectedEmployee)
+      const emp = absenceData.find(e => e.name === selectedEmployee)
       if (!emp) return
       let absences = emp.absences || []
       if (historyType === 'range' && startDate && endDate) {
@@ -313,7 +307,7 @@ function ExportDataPopup({ trackerData, screenRef, onClose }) {
       const monthIndex = months.indexOf(selectedMonth)
       const daysInMonth = GetDaysArray(monthIndex, selectedYear)
       const headers = ['Employee Name', ...daysInMonth]
-      const rows = trackerData.filter(emp => emp.active).map(emp => {
+      const rows = absenceData.filter(emp => emp.active).map(emp => {
         const row = { 'Employee Name': emp.name }
         daysInMonth.forEach(day => {
           const dateStr = GetDateString(selectedYear, monthIndex, day)
@@ -393,7 +387,6 @@ function ExportDataPopup({ trackerData, screenRef, onClose }) {
       });
     }
 
-
     onClose()
   }
 
@@ -420,7 +413,7 @@ function ExportDataPopup({ trackerData, screenRef, onClose }) {
               style={{ minWidth: '180px' }}
             >
               <option value="">Select employee</option>
-              {trackerData.map(emp => (
+              {absenceData.map(emp => (
                 <option key={emp.employeeId} value={emp.name}>{emp.name}</option>
               ))}
             </select>
@@ -516,23 +509,23 @@ function ExportDataPopup({ trackerData, screenRef, onClose }) {
 }
 
 /** Manage JSON Files Popup */
-function ManageJsonFilesPopup({ trackerData, setTrackerData, onClose }) {
+function ManageJsonFilesPopup({ absenceData, setAbsenceData, onClose }) {
   const [fileType, setFileType] = useState('')
   const [newEmployeeName, setNewEmployeeName] = useState('')
   const [newEmployeeId, setNewEmployeeId] = useState('')
   const [newEmployeeActive, setNewEmployeeActive] = useState(true)
-  const [absenceCodes, setAbsenceCodes] = useState(absenceCodeOptions)
+  const [absenceCodes, setAbsenceCodes] = useState(absenceCodes)
   const [newAbsenceCode, setNewAbsenceCode] = useState('')
   const [newAbsenceValue, setNewAbsenceValue] = useState('')
 
-  console.log('Initial Employees:', trackerData)
+  console.log('Initial Employees:', absenceData)
 
   // Handler for adding a new employee
   function handleAddEmployee() {
-    const newId = trackerData.length > 0 ? Math.max(...trackerData.map(emp => emp.employeeId)) + 1 : 1
+    const newId = absenceData.length > 0 ? Math.max(...absenceData.map(emp => emp.employeeId)) + 1 : 1
     setNewEmployeeId(newId.toString())
     if (!newEmployeeName || !newEmployeeId) return
-    setTrackerData(prev => [...prev, {
+    setAbsenceData(prev => [...prev, {
       name: newEmployeeName,
       employeeId: newEmployeeId,
       active: newEmployeeActive,
@@ -559,15 +552,15 @@ function ManageJsonFilesPopup({ trackerData, setTrackerData, onClose }) {
     }
   }
 
-  // Button handler to save current trackerData and codeData to JSON files
+  // Button handler to save current absenceData and codeData to JSON files
   function handleSaveJsonFiles() {
     //console.log('Employees to save:', employees)
-    console.log('Tracker Data:', trackerData)
+    console.log('Tracker Data:', absenceData)
     try {
       console.log("Saving absence data to:", absenceFilePath);
       fs.writeFileSync(
         absenceFilePath,
-        JSON.stringify(trackerData, null, 2),
+        JSON.stringify(absenceData, null, 2),
         'utf-8'
       );
       console.log('Absence file saved successfully.');
@@ -607,7 +600,7 @@ function ManageJsonFilesPopup({ trackerData, setTrackerData, onClose }) {
               </tr>
             </thead>
             <tbody>
-              {trackerData.map((emp, idx) => (
+              {absenceData.map((emp, idx) => (
                 <tr key={idx}>
                   <td style={{ border: '1px solid #ccc', padding: '4px' }}>{emp.name}</td>
                   <td style={{ border: '1px solid #ccc', padding: '4px' }}>{emp.employeeId}</td>
@@ -615,9 +608,9 @@ function ManageJsonFilesPopup({ trackerData, setTrackerData, onClose }) {
                     <select
                       value={emp.active ? 'Active' : 'Inactive'}
                       onChange={e => {
-                        const updatedEmployees = [...trackerData]
+                        const updatedEmployees = [...absenceData]
                         updatedEmployees[idx].active = e.target.value === 'Active'
-                        setTrackerData(updatedEmployees)
+                        setAbsenceData(updatedEmployees)
                       }}
                     >
                       <option value="Active">Active</option>
@@ -707,10 +700,46 @@ function ManageJsonFilesPopup({ trackerData, setTrackerData, onClose }) {
   )
 }
 
+function ManageJsonFilesWindow({ absenceData, setAbsenceData, absenceCodes, setAbsenceCodes, onClose }) {
+  console.log('ManageJsonFilesWindow opened with absenceData:', absenceData);
+}
+
 // --- Main App ---
 function App() {
+  const absenceFilePath = path.join(process.cwd(), 'assets', 'AbsenceTracker.json')
   // Use state for absenceCodes so UI updates and changes are tracked
-  const [trackerData, setTrackerData] = useState(absenceCodes)
+  const [absenceData, setAbsenceData] = useState(
+    JSON.parse(
+      fs.readFileSync(
+        absenceFilePath,
+        'utf-8'
+      )
+    ).sort((a, b) => {
+      const nameA = a.name.toUpperCase()
+      const nameB = b.name.toUpperCase()
+      if (nameA < nameB) return -1
+      if (nameA > nameB) return 1
+      return 0
+    })
+  )
+  const [absenceCodes, setAbsenceCodes] = useState(
+    JSON.parse(
+      fs.readFileSync(
+        path.join(
+          process.cwd(),
+          'assets',
+          'AbsenceCodes.json'
+        ),
+        'utf-8'
+      )
+    ).sort((a, b) => {
+      const nameA = a.code.toUpperCase()
+      const nameB = b.code.toUpperCase()
+      if (nameA < nameB) return -1
+      if (nameA > nameB) return 1
+      return 0
+    })
+  )
   // State for current year and month selection
   const currentYear = dayjs().format('YYYY')
   const [year, setYear] = useState(currentYear)
@@ -735,7 +764,7 @@ function App() {
   function handleCellClick(employee, day, /*absenceCodes, absenceComments*/) {
     const monthIndex = months.indexOf(month)
     const dateStr = GetDateString(year, monthIndex, day)
-    const empObj = trackerData.find(emp => emp.name === employee)
+    const empObj = absenceData.find(emp => emp.name === employee)
     const absencesForDay = empObj?.absences?.filter(a => a.date === dateStr) || []
     setEditAbsences(absencesForDay.length ? absencesForDay : [{ code: '', comment: '', date: dateStr }])
     setPopupInfo({ employee, day, dateStr })
@@ -759,21 +788,21 @@ function App() {
   }
 
   function handleSaveAbsences() {
-    const empIdx = trackerData.findIndex(emp => emp.name === popupInfo.employee)
+    const empIdx = absenceData.findIndex(emp => emp.name === popupInfo.employee)
     if (empIdx === -1) return
 
     const updatedAbsences = [
-      ...trackerData[empIdx].absences.filter(a => a.date !== popupInfo.dateStr),
+      ...absenceData[empIdx].absences.filter(a => a.date !== popupInfo.dateStr),
       ...editAbsences.filter(a => a.code)
     ]
 
-    const updatedTracker = [...trackerData]
+    const updatedTracker = [...absenceData]
     updatedTracker[empIdx] = {
       ...updatedTracker[empIdx],
       absences: updatedAbsences
     }
 
-    setTrackerData(updatedTracker)
+    setAbsenceData(updatedTracker)
     setPopupInfo(null)
   }
 
@@ -783,10 +812,10 @@ function App() {
     setPopupInfo(null)
   }
 
-  // Button handler to save current trackerData to JSON file
+  // Button handler to save current absenceData to JSON file
   function handleUpdateJson() {
     try {
-      fs.writeFileSync(absenceFilePath, JSON.stringify(trackerData, null, 2), 'utf-8')
+      fs.writeFileSync(absenceFilePath, JSON.stringify(absenceData, null, 2), 'utf-8')
       alert('Absence data saved to AbsenceTracker.json!')
     } catch (err) {
       alert('Failed to save absences: ' + err.message)
@@ -839,15 +868,15 @@ function App() {
       <div ref={screenRef}>
         <div className="card" style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
           <AbsenceTable
-            trackerData={trackerData}
+            absenceData={absenceData}
             daysInMonth={daysInMonth}
             month={month}
             year={year}
             onCellClick={handleCellClick}
           />
           <AbsenceSummaryTable
-            trackerData={trackerData}
-            absenceCodeOptions={absenceCodeOptions}
+            absenceData={absenceData}
+            absenceCodes={absenceCodes}
             month={month}
             year={year}
           />
@@ -855,8 +884,8 @@ function App() {
         {/* Daily Absence Tally Table below main table */}
         <div className="card" style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
           <DailyAbsenceTallyTable
-            trackerData={trackerData}
-            absenceCodeOptions={absenceCodeOptions}
+            absenceData={absenceData}
+            absenceCodes={absenceCodes}
             daysInMonth={daysInMonth}
             month={month}
             year={year}
@@ -868,7 +897,7 @@ function App() {
         <AbsencePopup
           popupInfo={popupInfo}
           editAbsences={editAbsences}
-          absenceCodeOptions={absenceCodeOptions}
+          absenceCodes={absenceCodes}
           handleAbsenceChange={handleAbsenceChange}
           handleAddAbsence={handleAddAbsence}
           handleDeleteAbsence={handleDeleteAbsence}
@@ -879,16 +908,15 @@ function App() {
       {/* Export Data Popup */}
       {showExportPopup && (
         <ExportDataPopup
-          trackerData={trackerData}
-          screenRef={screenRef}
+          absenceData={absenceData}
           onClose={() => setShowExportPopup(false)}
         />
       )}
       {/* Manage JSON Files Popup */}
       {manageJsonFiles && (
-        <ManageJsonFilesPopup
-          trackerData={trackerData}
-          setTrackerData={setTrackerData}
+        <ManageJsonFilesWindow
+          absenceData={absenceData}
+          setAbsenceData={setAbsenceData}
           onClose={() => setManageJsonFiles(false)}
         />
       )}
