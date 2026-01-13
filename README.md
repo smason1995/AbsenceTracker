@@ -1,9 +1,11 @@
 # Absence Tracker
 
 ## IMPORTANT
-Migrating from using JSON files to store data with all management on application side to SQLite to separate data storage and manage from the application more clearly, as well as increasing performance for various features when under heavy loads.
+~~Migrating from using JSON files to store data with all management on application side to SQLite to separate data storage and manage from the application more clearly, as well as increasing performance for various features when under heavy loads.~~
 
-Following current development in the branch Migration-to-new-architecture
+~~Following current development in the branch Migration-to-new-architecture~~
+
+Migrating app to a Tauri architecture, working on incremental improvements, and then reconsidering data storage if needed.
 
 ### Description
 This application is designed to track absences and give high level reporting capabilities on absences. Originally made to help a friend manage employees, this app is flexible enough to be used in many absence contexts.
