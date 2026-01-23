@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
+import { SettingsModal } from "./SettingsModal";
 import "./App.css";
 
 function daysInMonth(month, year) {
@@ -165,51 +166,86 @@ function AbsenceSummaryTable({ employeeData }) {
 function App() {
   const [employeeData, setEmployeeData] = useState([]);
   const [codeData, setCodeData] = useState([]);
-  const [dataLoaded, setDataLoaded] = useState(false);
   const [daysArr, setDaysArr] = useState([]);
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [year, setYear] = useState(new Date().getFullYear());
+  const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+
+  const mountRef = useRef(false);
+
+  // Load employee and code data on component mount
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchData() {
+      try {
+        const [employeeJson, codeJson] = await Promise.all([
+          invoke("read_employee_json"),
+          invoke("read_code_json")
+        ]);
+
+        if (cancelled) return;
+
+        setEmployeeData(JSON.parse(employeeJson).sort(
+          (a, b) => a.name.localeCompare(b.name)
+        ));
+        setCodeData(JSON.parse(codeJson).sort(
+          (a, b) => a.code.localeCompare(b.code)
+        ));
+        setDaysArr(getDaysArray(month, year));
+
+        setTimeout(() => {
+          console.log("Initial data loaded");
+          mountRef.current = true;
+        }, 1000);
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+      }
+    }
+    fetchData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
-    async function fetchEmployeeData() {
+    if (!mountRef.current) return;
+
+    async function writeData() {
       try {
-        const employeeJson = JSON.parse(
-          await invoke("read_employee_json")
-        ).sort(
-          (a, b) => a.name.localeCompare(b.name)
-        );
-        setEmployeeData(employeeJson);
+        await Promise.all([
+          invoke("write_employee_json", {
+            data: JSON.stringify(employeeData)
+          }),
+          invoke("write_code_json", {
+            data: JSON.stringify(codeData)
+          })
+        ]);
+        console.log("Data successfully saved");
       } catch (error) {
-        console.error("Failed to fetch employee data:", error);
+        console.error("Failed to write data:", error);
       }
     }
 
-    async function fetchCodeData() {
-      try {
-        const codeJson = JSON.parse(
-          await invoke("read_code_json")
-        ).sort(
-          (a, b) => a.code.localeCompare(b.code)
-        );
-        setCodeData(codeJson);
-      } catch (error) {
-        console.error("Failed to fetch code data:", error);
-      }
+    if (mountRef.current) {
+      console.log("Employee data changed, saving...");
+      writeData();
     }
+  }, [employeeData, codeData]);
 
-    fetchEmployeeData();
-    fetchCodeData();
-    setDaysArr(getDaysArray(month, year));
-    setDataLoaded(true);
-  }, []);
+  const handleSettingsSave = (newData) => {
+    setEmployeeData(newData.employeeData);
+    setCodeData(newData.codeData);
+    setSettingsModalOpen(false);
+  };
 
   return (
     <main className="container">
       <h1>Absence Tracker</h1>
       <div className="buttonContainer">
-        <button>Save Data</button>
+        {/* <button>Save Data</button> */}
         <button>Export Data</button>
-        <button>Settings</button>
+        <button onClick={() => setSettingsModalOpen(true)}>Settings</button>
       </div>
       <div className="formContainer">
         <EmployeeDataTable
@@ -226,6 +262,14 @@ function App() {
       <div className="absenceSummaryTable">
         <AbsenceSummaryTable employeeData={employeeData} />
       </div>
+
+      <SettingsModal
+        isOpen={settingsModalOpen}
+        onClose={() => setSettingsModalOpen(false)}
+        employeeData={employeeData}
+        codeData={codeData}
+        onSaveData={handleSettingsSave}
+      />
     </main>
   );
 }

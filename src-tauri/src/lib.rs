@@ -17,11 +17,27 @@ fn read_code_json(app: tauri::AppHandle) -> Result<String, String> {
     fs::read_to_string(json_path).map_err(|e| e.to_string())
 }
 
+/**
+ * JSON File Writing Commands
+ */
+#[tauri::command]
+fn write_employee_json(app: tauri::AppHandle, data: String) -> Result<(), String> {
+    let res_path = app.path().resource_dir().map_err(|e| e.to_string())?;
+    let json_path = res_path.join("assets/employees.json");
+    fs::write(json_path, data).map_err(|e| e.to_string())
+}
+#[tauri::command]
+fn write_code_json(app: tauri::AppHandle, data: String) -> Result<(), String> {
+    let res_path = app.path().resource_dir().map_err(|e| e.to_string())?;
+    let json_path = res_path.join("assets/codes.json");
+    fs::write(json_path, data).map_err(|e| e.to_string())
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![read_employee_json, read_code_json])
+        .invoke_handler(tauri::generate_handler![read_employee_json, read_code_json, write_employee_json, write_code_json])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
