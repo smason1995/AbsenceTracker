@@ -3,6 +3,7 @@ node_modules/
 jspm_packages/
 .vite/
 archive/
+.webpack/
 
 # --- Electron Forge / Build Outputs ---
 # Forge packs and makes distributables in this folder by default

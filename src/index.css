@@ -1,8 +1,67 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
 body {
   font-family:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
     sans-serif;
-  margin: auto;
-  max-width: 38rem;
-  padding: 2rem;
+}
+
+/* Main Layout Class */
+.grid-layout {
+  display: grid;
+  grid-template-rows: auto 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
+  min-height: 100vh;
+  min-width: 100vw;
+}
+
+/* Header Section Classes */
+.export-section {
+  grid-row: 1;
+  grid-column: 1;
+  margin: 5px;
+}
+
+.selection-section {
+  grid-row: 1;
+  grid-column: 2;
+  margin: 5px;
+}
+
+.settings-section {
+  grid-row: 1;
+  grid-column: 3;
+  margin: 5px;
+}
+
+/* Body Section Classes */
+.employee-data-section {
+  grid-row: 2 / span 2;
+  grid-column: 1 / span 2;
+  margin: 5px;
+}
+
+.employee-summary-section {
+  grid-row: 2 / span 2;
+  grid-column: 3;
+  margin: 5px;
+}
+
+.types-daily-summary-section {
+  grid-row: 4;
+  grid-column: 1 / span 2;
+  margin: 5px;
+}
+
+.types-monthly-summary-section {
+  grid-row: 4;
+  grid-column: 3;
+  margin: 5px;
 }
