@@ -1,85 +1,53 @@
-## Target-specific ignore rules
-###############################
-
-# Avalonia Specific Caches
-.avalonia/
-.avalonia-preview/
-
-# Build outputs and artifacts
-[Bb]in/
-[Oo]bj/
-x64/
-x86/
-arm/
-arm64/
-
-# User-specific files
-*.rsuser
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
-
-# Mono/Xamarin Android & iOS build artifacts (if targeting mobile with Avalonia)
-*.apk
-*.aab
-*.ipa
-
-## Visual Studio & MSBuild
-##########################
-.vs/
-_ReSharper*/
-*.opensdf
-*.sdf
-*.pidb
-*.glo
-*.csproj.user
-*.userprefs
-*.vshost.exe
-*.vshost.exe.manifest
-*.lnp
-.tools/
-
-## JetBrains Rider / IntelliJ
-#############################
-.idea/
-*.sln.iml
-
-## Visual Studio Code
-#####################
-.vscode/
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/code-workspace
-
-## Operating System Files
-#########################
-# Windows OSX OS-specific files
-Thumbs.db
-ehthumbs.db
-Desktop.ini
-.DS_Store
-.AppleDouble
-.LSOverride
-
-## Packages / Dependencies
-##########################
-# Paket dependency manager
-.paket/
-paket-files/
-
-# NuGet Packages
-*.nupkg
-# The packages folder can be ignored if using central package management or standard project.assets.json
-# packages/
-
-## Publishing / Deployment outputs
-##################################
-AppBundle/
-PublishOutput/
-*.wixpdb
-
-## Archive
+# --- Dependencies ---
+node_modules/
+jspm_packages/
+.vite/
 archive/
+
+# --- Electron Forge / Build Outputs ---
+# Forge packs and makes distributables in this folder by default
+out/
+dist/
+
+# --- Logs ---
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# --- Diagnostic/Crash Reports ---
+# Electron can generate crash dumps or core dumps
+*.dmp
+*.clog
+core
+*.core
+
+# --- Development & Environment ---
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.sample
+# Hardware acceleration/cache folders generated during local runs
+.eslintcache
+.stylelintcache
+
+# --- IDEs and Editors ---
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# --- OS Junk ---
+.DS_Store
+Thumbs.db
