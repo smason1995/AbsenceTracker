@@ -4,9 +4,6 @@ jspm_packages/
 .vite/
 archive/
 .webpack/
-src/backend/app.db
-*.bk
-package-lock.json
 
 # --- Electron Forge / Build Outputs ---
 # Forge packs and makes distributables in this folder by default
