@@ -1,10 +1,40 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('node:path');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (require('electron-squirrel-startup')) {
   app.quit();
 }
+
+import { DbService } from './backend/dbservice.js';
+
+let dbService;
+try {
+  dbService = new DbService();
+} catch (error) {
+  console.error(`Critical: Failed to start DB Service: ${error}`);
+}
+
+// IPC Listeners mapping the preload triggers to the class methods
+ipcMain.handle('db:get-all-types', () => {
+  return dbService.getAllTypes();
+});
+
+ipcMain.handle('db:get-active-employees', () => {
+  return dbService.getActiveEmployees();
+});
+
+ipcMain.handle('db:get-absence-table', (event, month, year) => {
+  return dbService.getAbsenceTable(month, year);
+});
+
+ipcMain.handle('db:get-absence-day-details', (event, emplId, absDate) => {
+  return dbService.getAbsenceDayDetails(emplId, absDate);
+});
+
+ipcMain.handle('db:get-active-sites', () => {
+  return dbService.getActiveSites();
+});
 
 const createWindow = () => {
   // Create the browser window.

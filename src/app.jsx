@@ -1,4 +1,7 @@
 import React from 'react';
+import {
+    useState
+} from 'react';
 
 import {
     ExportSection,
@@ -16,12 +19,23 @@ import {
 
 
 const App = () => {
+    /* Header State Props */
+    const [month, setMonth] = useState(3);
+    const [year, setYear] = useState(new Date().getFullYear())
+    /* Body State Props */
+    const [absenceTableJson, setAbsenceTableJson] = useState([]);
     return (
         <>
             <ExportSection />
-            <SelectionSection />
+            <SelectionSection
+                month={month} setMonth={setMonth}
+                year={year} setYear={setYear}
+            />
             <SettingsSection />
-            <EmployeeDataSection />
+            <EmployeeDataSection
+                absenceTableJson={absenceTableJson} setAbsenceTableJson={setAbsenceTableJson}
+                month={month} year={year}
+            />
             <EmployeeSummarySection />
             <TypesDailySummarySection />
             <TypesMonthlySummarySection />
