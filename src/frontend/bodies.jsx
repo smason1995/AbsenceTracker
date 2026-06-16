@@ -1,7 +1,8 @@
 import React, { use } from 'react';
 import {
     useState,
-    useEffect
+    useEffect,
+    useRef
 } from 'react';
 import * as Popover from '@radix-ui/react-popover'
 
@@ -13,13 +14,18 @@ import {
     DismissIcon
 } from './icons.jsx';
 
-function AbsenceDayDetails({ row, day, month, year }) {
+function AbsenceDayDetails({ row, day, month, year, onSaveComplete }) {
     const [types, setTypes] = useState([]);
     const [sites, setSites] = useState([]);
     const [existingData, setExistingData] = useState([]);
     const [activeCommentDraft, setActiveCommentDraft] = useState({ index: null, text: "" });
-    let newData = [];
-    let deletedIds = [];
+    const deletedIdsRef = useRef([]);
+
+    const syncRef = useRef({ existingData, deletedIds: [] });
+
+    useEffect(() => {
+        syncRef.current = { existingData, deletedIds: deletedIdsRef.current };
+    }, [existingData])
 
     useEffect(() => {
         window.api.getAllTypes()
@@ -34,14 +40,79 @@ function AbsenceDayDetails({ row, day, month, year }) {
         window.api.getAbsenceDayDetails(row.employee_key, cellDate)
             .then((data) => setExistingData(data || []))
             .catch((error) => console.error(`Database IPC retrieval failure: ${error}`));
+
+        return () => {
+            const finalData = syncRef.current.existingData;
+            const finalDeletes = syncRef.current.deletedIds;
+
+            const itemsToInsert = finalData.filter(row => row.isNew && row.type_code);
+            const itemsToUpdate = finalData.filter(row => row.id && row.isDirty);
+
+            if (itemsToInsert.length === 0 && itemsToUpdate.length === 0 && finalDeletes.length === 0) {
+                return;
+            }
+
+            const targetMonthStr = String(month + 1).padStart(2, '0');
+            const targetDayStr = String(day).padStart(2, '0');
+            const cellDateStr = `${year}-${targetMonthStr}-${targetDayStr}`;
+
+            const dbOperationsQueue = [];
+
+            itemsToInsert.forEach((json) => {
+                const finalJson = {
+                    ...json,
+                    employee_key: row.employee_key,
+                    date: cellDateStr
+                };
+
+                dbOperationsQueue.push(
+                    window.api.insertAbsence(finalJson)
+                        .then((data) => console.log(`Inserted ${JSON.stringify(data)}`))
+                        .catch((error) => console.error(`Database IPC retrieval failure: ${error}`))
+                );
+
+            });
+
+            itemsToUpdate.forEach((json) => {
+                const finalJson = {
+                    ...json,
+                    employee_key: row.employee_key,
+                    date: cellDateStr
+                };
+
+                dbOperationsQueue.push(
+                    window.api.updateAbsence(finalJson)
+                        .then((data) => console.log(`Inserted ${JSON.stringify(data)}`))
+                        .catch((error) => console.error(`Database IPC retrieval failure: ${error}`))
+                );
+            });
+
+            finalDeletes.forEach((id) => {
+                dbOperationsQueue.push(
+                    window.api.deleteAbsence(id)
+                        .then((data) => console.log(`Deleted ${JSON.stringify(data)}`))
+                        .catch((error) => console.error(`Database IPC retrieval failure: ${error}`))
+                );
+            });
+
+            if (dbOperationsQueue.length > 0) {
+                Promise.all(dbOperationsQueue).then(() => {
+                    if(typeof onSaveComplete === 'function') {
+                        onSaveComplete();
+                    }
+                })
+            }
+        }
     }, []);
 
     const handleRowValueChange = (rowIndex, columnField, newValue) => {
         setExistingData((prevData) => {
             const updatedRows = [...prevData];
+            const targetRow = updatedRows[rowIndex];
             updatedRows[rowIndex] = {
                 ...updatedRows[rowIndex],
-                [columnField]: newValue
+                [columnField]: newValue,
+                isDirty: targetRow.id ? true : targetRow.isDirty
             };
             return updatedRows;
         });
@@ -65,7 +136,8 @@ function AbsenceDayDetails({ row, day, month, year }) {
             minutes: '',       // Blank minutes field
             comment: '',       // Blank comment field
             name: '',          // Blank site name selection
-            time: ''           // Blank time field
+            time: '',          // Blank time field
+            isNew: true        // flag to identify new rows for INSERT
         };
 
         // Update your state array reference immutably
@@ -76,7 +148,9 @@ function AbsenceDayDetails({ row, day, month, year }) {
         const rowToDelete = existingData[rowIndex];
 
         if (rowToDelete && rowToDelete.id) {
-            deletedIds.push(rowToDelete.id);
+            if (!deletedIdsRef.current.includes(rowToDelete.id)) {
+                deletedIdsRef.current.push(rowToDelete.id);
+            }
         }
 
         setExistingData((prevData) => {
@@ -107,7 +181,6 @@ function AbsenceDayDetails({ row, day, month, year }) {
                         <tbody>
                             {existingData.length > 0 &&
                                 existingData.map((dataRow, index) => {
-                                    console.log(JSON.stringify(dataRow))
                                     return (
                                         <tr key={dataRow.id || index}>
                                             <td>
@@ -131,6 +204,8 @@ function AbsenceDayDetails({ row, day, month, year }) {
                                                 <input
                                                     type="number"
                                                     disabled={dataRow.type_code !== 'T'}
+                                                    value={dataRow.minutes ?? ''}
+                                                    onChange={(ev) => handleRowValueChange(index, 'minutes', ev.target.value)}
                                                 />
                                             </td>
                                             <td>
@@ -250,10 +325,15 @@ export const EmployeeDataSection = ({
     const [tableDataJson, setTableDataJson] = useState([]);
     const [daysInMonth, setDaysInMonth] = useState([]);
 
-    useEffect(() => {
+    const refreshTableData = () => {
         window.api.getAbsenceTable(month + 1, year)
             .then((data) => setAbsenceTableJson(data))
             .catch((error) => console.error(`Database IPC retrieval failure: ${error}`));
+    };
+
+    useEffect(() => {
+        refreshTableData();
+
         const totalDays = new Date(year, month + 1, 0).getDate();
         const daysArray = Array.from({ length: totalDays }, (_, i) => i + 1);
         setDaysInMonth(daysArray);
@@ -339,6 +419,7 @@ export const EmployeeDataSection = ({
                                                                 day={day}
                                                                 month={month}
                                                                 year={year}
+                                                                onSaveComplete={refreshTableData}
                                                             />
 
                                                             <Popover.Arrow className="matrix-popover-arrow" />

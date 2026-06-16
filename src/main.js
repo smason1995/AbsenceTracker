@@ -36,6 +36,18 @@ ipcMain.handle('db:get-active-sites', () => {
   return dbService.getActiveSites();
 });
 
+ipcMain.handle('db:insert-absence', (event, newRecordJson) => {
+  return dbService.insertAbsence(newRecordJson);
+});
+
+ipcMain.handle('db:update-absence', (event, updatedRecordJson) => {
+  return dbService.updateAbsence(updatedRecordJson);
+});
+
+ipcMain.handle('db-delete-absence', (event, deletedRecordId) => {
+  return dbService.deleteAbsence(deletedRecordId);
+});
+
 const createWindow = () => {
   // Create the browser window.
   const mainWindow = new BrowserWindow({
