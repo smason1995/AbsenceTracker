@@ -67,7 +67,6 @@ function AbsenceDayDetails({ row, day, month, year, onSaveComplete }) {
 
                 dbOperationsQueue.push(
                     window.api.insertAbsence(finalJson)
-                        .then((data) => console.log(`Inserted ${JSON.stringify(data)}`))
                         .catch((error) => console.error(`Database IPC retrieval failure: ${error}`))
                 );
 
@@ -82,7 +81,6 @@ function AbsenceDayDetails({ row, day, month, year, onSaveComplete }) {
 
                 dbOperationsQueue.push(
                     window.api.updateAbsence(finalJson)
-                        .then((data) => console.log(`Inserted ${JSON.stringify(data)}`))
                         .catch((error) => console.error(`Database IPC retrieval failure: ${error}`))
                 );
             });
@@ -90,14 +88,13 @@ function AbsenceDayDetails({ row, day, month, year, onSaveComplete }) {
             finalDeletes.forEach((id) => {
                 dbOperationsQueue.push(
                     window.api.deleteAbsence(id)
-                        .then((data) => console.log(`Deleted ${JSON.stringify(data)}`))
                         .catch((error) => console.error(`Database IPC retrieval failure: ${error}`))
                 );
             });
 
             if (dbOperationsQueue.length > 0) {
                 Promise.all(dbOperationsQueue).then(() => {
-                    if(typeof onSaveComplete === 'function') {
+                    if (typeof onSaveComplete === 'function') {
                         onSaveComplete();
                     }
                 })
@@ -166,7 +163,10 @@ function AbsenceDayDetails({ row, day, month, year, onSaveComplete }) {
             </div>
             <div className="popover-comment-text">
                 {/*{row.absence_comments || 'No details recorded.'}*/}
-                <div className="matrix-table-scroll-wrapper">
+                <div
+                    className="matrix-table-scroll-wrapper"
+                    style={existingData.length > 5 ? { maxHeight: '235px', overflowY: 'auto' } : {}}
+                >
                     <table>
                         <thead>
                             <tr>
@@ -320,10 +320,13 @@ function AbsenceDayDetails({ row, day, month, year, onSaveComplete }) {
 
 export const EmployeeDataSection = ({
     absenceTableJson = [], setAbsenceTableJson,
-    month, year
+    month, year,
+    employees
 }) => {
     const [tableDataJson, setTableDataJson] = useState([]);
     const [daysInMonth, setDaysInMonth] = useState([]);
+    // Minimal change: Changed initial state pattern to an object map for instant lookups
+    const [highlightedCells, setHighlightedCells] = useState({});
 
     const refreshTableData = () => {
         window.api.getAbsenceTable(month + 1, year)
@@ -337,7 +340,38 @@ export const EmployeeDataSection = ({
         const totalDays = new Date(year, month + 1, 0).getDate();
         const daysArray = Array.from({ length: totalDays }, (_, i) => i + 1);
         setDaysInMonth(daysArray);
-    }, [month, year]);
+    }, [month, year, employees]);
+
+    // Added: Secondary independent listener to fetch cell highlights safely across the wire
+    useEffect(() => {
+        if (!absenceTableJson.length || !daysInMonth.length) return;
+
+        let isCurrentBatch = true;
+        const lookupMap = {};
+
+        // Queue concurrent IPC query tasks for each active grid block coordinate
+        const promises = absenceTableJson.flatMap((row, index) => {
+            const empId = row.employee_key;
+
+            return daysInMonth.map((day) => {
+                const cellDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+                return window.api.getAbsenceHighlight({ id: empId, date: cellDate, count: 3 })
+                    .then((resultRow) => {
+                        if (resultRow && isCurrentBatch) {
+                            lookupMap[`${empId}-${day}`] = true;
+                        }
+                    })
+                    .catch((err) => console.error(`Highlight check error: ${err}`));
+            });
+        });
+
+        Promise.all(promises).then(() => {
+            if (isCurrentBatch) setHighlightedCells(lookupMap);
+        });
+
+        return () => { isCurrentBatch = false; };
+    }, [absenceTableJson, daysInMonth, month, year]);
 
     function TableData(tableData, daysArr) {
         return (
@@ -360,7 +394,9 @@ export const EmployeeDataSection = ({
                             </tr>
                         ) : (
                             tableData.map((row, index) => {
-                                // 1. Build a lookup object for absence codes: { 13: "E", 14: "PI" }
+                                const empKey = row.employee_key || row.employee_id || index;
+
+                                // 1. Build a lookup object for absence codes
                                 const absenceMap = {};
                                 if (row.absence_codes) {
                                     row.absence_codes.split('|').forEach(entry => {
@@ -373,7 +409,7 @@ export const EmployeeDataSection = ({
                                     });
                                 }
 
-                                // 2. Build a lookup object for comments: { 13: "Left early, no notice", 14: "Possible woohoo..." }
+                                // 2. Build a lookup object for comments
                                 const commentMap = {};
                                 if (row.absence_comments) {
                                     row.absence_comments.split('|').forEach(entry => {
@@ -387,19 +423,24 @@ export const EmployeeDataSection = ({
                                 }
 
                                 return (
-                                    <tr key={row.employee_key || row.employee_id || index}>
+                                    <tr key={empKey}>
                                         <td>{row.employee_name}</td>
                                         {daysArr.map((day) => {
                                             const cellCode = absenceMap[day] || '';
-                                            const cellComment = commentMap[day] || ''; // Extract text for this specific cell date
+                                            const cellComment = commentMap[day] || '';
                                             const isAbsenceDay = cellCode !== '';
+
+                                            // Added: Direct synchronous state verification
+                                            const isHighlighted = !!highlightedCells[`${empKey}-${day}`];
+
+                                            const highlight = isAbsenceDay && isHighlighted;
 
                                             return (
                                                 <Popover.Root key={day}>
                                                     <Popover.Trigger asChild>
-                                                        {/* 3. Re-inject the title attribute for hover tooltips! */}
+                                                        {/* Minimal change: Conditional injection of the alert highlight class */}
                                                         <td
-                                                            className={`matrix-data-cell ${isAbsenceDay ? 'has-absence' : ''}`}
+                                                            className={`matrix-data-cell ${highlight ? 'has-absence' : ''}`}
                                                             title={isAbsenceDay && cellComment ? cellComment : undefined}
                                                         >
                                                             {cellCode}

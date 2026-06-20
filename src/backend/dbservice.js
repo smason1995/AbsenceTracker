@@ -64,6 +64,37 @@ export class DbService {
         }
     }
 
+    getAllCerts() {
+        try {
+            const query = this.#db.prepare(`
+                select id,
+                       title
+                  from certs
+                 order by title asc;
+            `);
+            return query.all();
+        } catch (error) {
+            console.error(`Error fetching all types: ${error}`);
+            return [];
+        }
+    }
+
+    getAllSites() {
+        try {
+            const query = this.#db.prepare(`
+                select s.id, 
+                       s.name, 
+                       s.active
+                  from sites s
+                 order by s.name;
+            `);
+            return query.all();
+        } catch (error) {
+            console.error(`Error fetching all sites: ${error}`);
+            return [];
+        }
+    }
+
     getActiveSites() {
         try {
             const query = this.#db.prepare(`
@@ -138,6 +169,28 @@ export class DbService {
         }
     }
 
+    getAbsenceHighlight(queryJson) {
+        try {
+            const query = this.#db.prepare(`
+                select a.employee_id,
+                       count(a.id) as absence_count
+                  from absences a
+                 where date(a.datetime) between date($date, '-30 days') and date($date)
+                   and a.employee_id = $id
+                 group by a.employee_id
+                having count(a.id) >= $count;
+            `);
+            return query.get({
+                $id: queryJson.id,
+                $date: queryJson.date,
+                $count: queryJson.count
+            });
+        } catch (error) {
+            console.log(`Error fetching highlight count: ${error}`);
+            return [];
+        }
+    }
+
     getAbsenceDayDetails(emplId, absDate) {
         try {
             const query = this.#db.prepare(`
@@ -156,6 +209,29 @@ export class DbService {
             return query.all({ $eid: emplId, $dateStr: absDate });
         } catch (error) {
             console.error(`Error fetching absence details for date ${absDate}: ${error}`);
+            return [];
+        }
+    }
+
+    getAllEmployees() {
+        try {
+            const query = this.#db.prepare(`
+                select e.id,
+                       e.employee_id,
+                       e.first_name,
+                       e.last_name,
+                       e.active,
+                       group_concat(c2.title || ':' || c.expiration_date || ':' || c.id, ',') as certificates
+                  from employees e
+                  left join certified c
+                    on e.id = c.employee_id
+                  left join certs c2
+                    on c.certs_id = c2.id
+                 group by e.id;
+            `);
+            return query.all();
+        } catch (error) {
+            console.log(`Error fetching employee list: ${error}`);
             return [];
         }
     }
@@ -197,6 +273,107 @@ export class DbService {
         }
     }
 
+    insertEmployee(newRecordJson) {
+        try {
+            const stmt = this.#db.prepare(`
+                insert into employees(employee_id, first_name, last_name, active)
+                values(
+                    $employeeId,
+                    $firstName,
+                    $lastName,
+                    $active);
+            `)
+
+            const result = stmt.run({
+                $employeeId: newRecordJson.employee_id,
+                $firstName: newRecordJson.first_name,
+                $lastName: newRecordJson.last_name,
+                $active: newRecordJson.active
+            })
+
+            this.#insertAuditRow('employees', result.lastInsertRowid, 'INSERT');
+        } catch (error) {
+            console.error(`Database core insertion failure: ${error}`);
+            throw error;
+        }
+    }
+
+    insertEmployeeCert(newRecordJson) {
+        try {
+            const stmt = this.#db.prepare(`
+                insert into certified(employee_id, certs_id, expiration_date)
+                values($employeeId, (select id from certs where title = $certsTitle), $expiration);
+            `)
+
+            const result = stmt.run({
+                $employeeId: newRecordJson.employee_id,
+                $certsTitle: newRecordJson.certs_title,
+                $expiration: newRecordJson.expiration
+            })
+
+            this.#insertAuditRow('certified', result.lastInsertRowid, 'INSERT');
+        } catch (error) {
+            console.error(`Database core insertion failure: ${error}`);
+            throw error;
+        }
+    }
+
+    insertSite(newRecordJson) {
+        try {
+            const stmt = this.#db.prepare(`
+                insert into sites(name, active)
+                values($name, $active);
+            `)
+
+            const result = stmt.run({
+                $name: newRecordJson.name,
+                $active: newRecordJson.active
+            })
+
+            this.#insertAuditRow('sites', result.lastInsertRowid, 'INSERT');
+        } catch (error) {
+            console.error(`Database core insertion failure: ${error}`);
+            throw error;
+        }
+    }
+
+    insertCert(newRecordJson) {
+        try {
+            const stmt = this.#db.prepare(`
+                insert into certs(title)
+                values($title);
+            `)
+
+            const result = stmt.run({
+                $title: newRecordJson.title
+            })
+
+            this.#insertAuditRow('certs', result.lastInsertRowid, 'INSERT');
+        } catch (error) {
+            console.error(`Database core insertion failure: ${error}`);
+            throw error;
+        }
+    }
+
+    insertType(newRecordJson) {
+        try {
+            const stmt = this.#db.prepare(`
+                insert into types(code, description)
+                values($code, $description);
+            `)
+
+            const result = stmt.run({
+                $code: newRecordJson.code,
+                $description: newRecordJson.description
+            })
+
+            this.#insertAuditRow('types', newRecordJson.code, 'INSERT', 'code');
+        } catch (error) {
+            console.error(`Database core insertion failure: ${error}`);
+            throw error;
+        }
+    }
+
     /* Data Updates */
     updateAbsence(updatedRecordJson) {
         try {
@@ -230,6 +407,76 @@ export class DbService {
         }
     }
 
+    updateEmployee(updatedRecordJson) {
+        try {
+            this.#insertAuditRow('employees', updatedRecordJson.id, 'UPDATE');
+
+            const stmt = this.#db.prepare(`
+                update employees
+                   set employee_id=$employeeId,
+                       first_name=$firstName,
+                       last_name=$lastName,
+                       active=$active
+                 where id=$eid;
+            `);
+
+            const result = stmt.run({
+                $employeeId: updatedRecordJson.employee_id,
+                $firstName: updatedRecordJson.first_name,
+                $lastName: updatedRecordJson.last_name,
+                $active: updatedRecordJson.active,
+                $eid: updatedRecordJson.id
+            })
+        } catch (error) {
+            console.error(`Database core update failure on ID ${updatedRecordJson.id}: ${error}`);
+            throw error;
+        }
+    }
+    updateEmployeeCert(updatedRecordJson) {
+        try {
+            this.#insertAuditRow('certified', updatedRecordJson.id, 'UPDATE');
+
+            const stmt = this.#db.prepare(`     
+                update certified
+                   set employee_id=$employeeId,
+                       certs_id=(select id from certs where title = $certsTitle),
+                       expiration_date=$expiration
+                 where id=$cid;
+            `);
+
+            const result = stmt.run({
+                $employeeId: updatedRecordJson.employee_id,
+                $certsTitle: updatedRecordJson.certs_title,
+                $expiration: updatedRecordJson.expiration,
+                $cid: updatedRecordJson.id
+            });
+        } catch (error) {
+            console.error(`Database core update failure on ID ${updatedRecordJson.id}: ${error}`);
+            throw error;
+        }
+    }
+    updateSite(updatedRecordJson) {
+        try {
+            this.#insertAuditRow('sites', updatedRecordJson.id, 'UPDATE');
+
+            const stmt = this.#db.prepare(`
+                update sites
+                   set name=$name,
+                       active=$active
+                 where id=$sid;
+            `)
+
+            const result = stmt.run({
+                $name: updatedRecordJson.name,
+                $active: updatedRecordJson.active,
+                $sid: updatedRecordJson.id
+            })
+        } catch (error) {
+            console.error(`Database core update failure on ID ${updatedRecordJson.id}: ${error}`);
+            throw error;
+        }
+    }
+
     /* Data Deletes */
     deleteAbsence(deletedRecordId) {
         try {
@@ -245,6 +492,24 @@ export class DbService {
             });
 
             return result;
+        } catch (error) {
+            console.error(`Database core deletion failure on ID ${deletedRecordId}: ${error}`);
+            throw error;
+        }
+    }
+
+    deleteEmployeeCert(deletedRecordId) {
+        try {
+            this.#insertAuditRow('certified', deletedRecordId, 'DELETE');
+
+            const stmt = this.#db.prepare(`
+                delete from certified
+                 where id = $id;
+            `)
+
+            const result = stmt.run({
+                $id: deletedRecordId
+            });
         } catch (error) {
             console.error(`Database core deletion failure on ID ${deletedRecordId}: ${error}`);
             throw error;

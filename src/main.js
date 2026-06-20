@@ -20,6 +20,14 @@ ipcMain.handle('db:get-all-types', () => {
   return dbService.getAllTypes();
 });
 
+ipcMain.handle('db:get-all-certs', () => {
+  return dbService.getAllCerts();
+});
+
+ipcMain.handle('db:get-all-sites', () => {
+  return dbService.getAllSites();
+});
+
 ipcMain.handle('db:get-active-employees', () => {
   return dbService.getActiveEmployees();
 });
@@ -36,12 +44,52 @@ ipcMain.handle('db:get-active-sites', () => {
   return dbService.getActiveSites();
 });
 
+ipcMain.handle('db:get-all-employees', () => {
+  return dbService.getAllEmployees();
+})
+
+ipcMain.handle('db:get-absence-highlight', (event, queryJson) => {
+  return dbService.getAbsenceHighlight(queryJson);
+})
+
 ipcMain.handle('db:insert-absence', (event, newRecordJson) => {
   return dbService.insertAbsence(newRecordJson);
 });
 
+ipcMain.handle('db:insert-employee', (event, newRecordJson) => {
+  return dbService.insertEmployee(newRecordJson);
+});
+
+ipcMain.handle('db:insert-employee-cert', (event, newRecordJson) => {
+  return dbService.insertEmployeeCert(newRecordJson);
+});
+
+ipcMain.handle('db:insert-site', (event, newRecordJson) => {
+  return dbService.insertSite(newRecordJson);
+});
+
+ipcMain.handle('db:insert-cert', (event, newRecordJson) => {
+  return dbService.insertCert(newRecordJson);
+});
+
+ipcMain.handle('db:insert-type', (event, newRecordJson) => {
+  return dbService.insertType(newRecordJson);
+});
+
 ipcMain.handle('db:update-absence', (event, updatedRecordJson) => {
   return dbService.updateAbsence(updatedRecordJson);
+});
+
+ipcMain.handle('db:update-employee', (event, updatedRecordJson) => {
+  return dbService.updateEmployee(updatedRecordJson);
+});
+
+ipcMain.handle('db:update-employee-cert', (event, updatedRecordJson) => {
+  return dbService.updateEmployeeCert(updatedRecordJson);
+});
+
+ipcMain.handle('db:update-site', (event, updatedRecordJson) => {
+  return dbService.updateSite(updatedRecordJson);
 });
 
 ipcMain.handle('db-delete-absence', (event, deletedRecordId) => {

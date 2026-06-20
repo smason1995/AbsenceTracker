@@ -137,6 +137,18 @@ button {
   margin: 0 2px 0 2px;
 }
 
+button:disabled {
+  background-color: var(--bg-app);
+  /* Reverts to background canvas tone */
+  color: var(--text-muted);
+  /* Mutes text & SVG icons utilizing currentColor */
+  border: 1px solid transparent;
+  /* Flattens out Fluent's standard border-bottom depth */
+  cursor: not-allowed;
+  transform: none;
+  /* Safety baseline fallback */
+}
+
 button:hover {
   background-color: var(--bg-app);
   border-color: var(--text-muted);
@@ -523,6 +535,282 @@ form footer,
 
 .comment-popover textarea:focus {
   border-color: var(--text-muted);
+}
+
+/* ==========================================================================
+   10. Radix Dialog & Tabs Modals
+   ========================================================================== */
+
+/* Darkened backing blur layer */
+.dialog-overlay {
+  background-color: rgba(0, 0, 0, 0.4);
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  animation: dialogOverlayShow 120ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Centralized floating configuration sheet */
+.dialog-content {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  box-shadow: var(--shadow-flyout);
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90vw;
+  /* Configures layout base container to be exactly 80 characters wide */
+  max-width: 80ch;
+  max-height: 85vh;
+  padding: 24px;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  outline: none;
+  font-family: var(--font-family);
+  animation: dialogContentShow 140ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Scrollable Container Wrapper for Tables inside Tabs */
+.dialog-table-container {
+  width: 100%;
+  overflow-x: auto;
+  max-height: 205px;
+  overflow-y: auto;
+  /* Forces horizontal scrolling when columns break bounds */
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--bg-surface);
+  margin-top: 12px;
+}
+
+.dialog-table-container table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-family);
+  font-size: 13px;
+}
+
+.dialog-table-container th {
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 10px 12px;
+  border-bottom: 2px solid var(--border-color);
+  text-align: center;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  position: sticky;
+  z-index: 1;
+  background-color: var(--bg-sticky);
+  top: 0;
+}
+
+/* Uniform cell structure with gentle row dividers */
+.dialog-table-container td {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+  height: 36px;
+  /* Ensures consistent row height across selections */
+
+
+  .dialog-table-container td span {
+    display: inline-block;
+    padding: 5px 8px;
+    color: var(--text-primary);
+    font-weight: 500;
+    text-align: center;
+    border-radius: 4px;
+    transition: background-color 0.1s ease;
+  }
+
+  .dialog-table-container td span:hover {
+    background-color: var(--bg-app);
+  }
+}
+
+/* Row interaction background shift */
+.dialog-table-container tbody tr:hover {
+  background-color: rgba(0, 0, 0, 0.015);
+}
+
+.dialog-title {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.dialog-description {
+  margin: 0 0 20px 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.dialog-close-btn {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  height: auto;
+  margin: 0;
+}
+
+.dialog-close-btn:hover {
+  background-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+.dialog-popover-content {
+  background-color: var(--bg-surface-flyout);
+  backdrop-filter: blur(16px) saturate(135%);
+  /* Fluent Acrylic Material */
+  -webkit-backdrop-filter: blur(16px) saturate(135%);
+  border: 1px solid var(--border-flyout);
+  border-radius: 6px;
+  min-width: 360px;
+  box-shadow: var(--shadow-flyout);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  overflow: hidden;
+  z-index: 9999;
+  pointer-events: auto;
+  animation: popoverSlideUpAndFade 0.12s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Tabs structure mapping */
+.tabs-root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.tabs-list {
+  display: flex;
+  flex-direction: row;
+  border-bottom: 1px solid var(--border-color);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.tabs-trigger {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: var(--text-secondary);
+  padding: 6px 2px 8px 2px;
+  font-size: 13px;
+  font-weight: 500;
+  height: auto;
+  margin: 0;
+  cursor: pointer;
+  transition: color 0.1s ease, border-color 0.1s ease;
+}
+
+.tabs-trigger:hover {
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.tabs-trigger[data-state="active"] {
+  color: var(--text-primary);
+  border-bottom-color: var(--text-primary);
+  font-weight: 600;
+}
+
+.tabs-content {
+  outline: none;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Dynamic Width Inputs */
+.auto-width-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 5px 8px;
+  border-radius: 4px;
+  text-align: center;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  transition: background-color 0.1s ease, border-color 0.1s ease;
+}
+
+.auto-width-input:hover {
+  background-color: var(--bg-app);
+}
+
+.auto-width-input:focus {
+  background-color: var(--bg-surface);
+  border-color: var(--text-primary);
+  outline: none;
+  box-shadow: 0 0 0 1px var(--text-primary);
+}
+
+.auto-width-select {
+  field-sizing: content;
+  /* Handles dynamic widening based on the selected option */
+  padding: 4px 20px 4px 6px;
+  /* Extra right space handles the dropdown arrow comfortably */
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: center;
+}
+
+.auto-width-select:focus {
+  outline: 1px solid var(--text-primary);
+  background-color: var(--bg-surface);
+}
+
+/* Optional styling to make dropdown options look clean inside the flyout */
+.auto-width-select option {
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+/* Micro-interaction Keyframes */
+@keyframes dialogOverlayShow {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dialogContentShow {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -47%) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 /* ==========================================================================
