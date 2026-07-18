@@ -827,3 +827,77 @@ form footer,
     transform: translateY(0);
   }
 }
+
+/* ==========================================================================
+   11. Export Dialog Form Extensions
+   ========================================================================== */
+
+/* Cleans up the paragraph text style inside forms */
+.form-info-text {
+  margin: 0 0 4px 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Spaces out the perspective selector dropdown away from the dynamic form rules */
+.dialog-selector-wrapper {
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 16px;
+}
+
+/* Allows internal components inside the forms to stretch comfortably */
+.full-width-select {
+  width: 100%;
+  text-align: left;
+}
+
+/* Creates a side-by-side split layout specifically for Start and End dates */
+.form-date-group {
+  display: flex;
+  flex-direction: row !important;
+  gap: 12px !important;
+}
+
+/* Modifies the browser date inputs to fit the overall input tokens */
+input[type="date"] {
+  width: 100%;
+  text-align: left;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+input[type="date"]:hover {
+  background-color: var(--bg-app);
+}
+
+input[type="date"]:focus {
+  border-color: var(--text-muted);
+  border-bottom: 2px solid var(--text-secondary);
+}
+
+/* Tweaks styling specifically for structural check boxes */
+form section input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--text-muted);
+}
+
+form section label {
+  cursor: pointer;
+}
+
+/* Primary style fallback for the execution/download command */
+.primary-action-button {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-secondary);
+  padding: 6px 16px;
+  height: 32px;
+}
+
+.primary-action-button:hover {
+  background-color: var(--bg-app);
+}

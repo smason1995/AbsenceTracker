@@ -41,15 +41,24 @@ const App = () => {
                 sites={sites} setSites={setSites}
                 certs={certs} setCerts={setCerts}
                 types={types} setTypes={setTypes}
-             />
+            />
             <EmployeeDataSection
                 absenceTableJson={absenceTableJson} setAbsenceTableJson={setAbsenceTableJson}
                 month={month} year={year}
                 employees={employees}
             />
-            <EmployeeSummarySection />
-            <TypesDailySummarySection />
-            <TypesMonthlySummarySection />
+            <EmployeeSummarySection
+                absenceTableJson={absenceTableJson}
+                month={month} year={year}
+            />
+            <TypesDailySummarySection
+                absenceTableJson={absenceTableJson}
+                month={month} year={year}
+            />
+            <TypesMonthlySummarySection
+                absenceTableJson={absenceTableJson}
+                month={month} year={year}
+            />
         </>
     );
 };

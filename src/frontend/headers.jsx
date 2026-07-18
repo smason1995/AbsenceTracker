@@ -6,6 +6,7 @@ import * as Tabs from '@radix-ui/react-tabs';
 
 import { ManagementDialog } from './headers/management.jsx';
 import { ValidationDialog } from './headers/validation.jsx';
+import { ExportDialog } from './headers/export.jsx';
 
 import {
     TableRowAddIcon,
@@ -20,7 +21,7 @@ export const ExportSection = () => {
     return (
         <>
             <div className="export-section">
-                <button>Export Data</button>
+                <ExportDialog />
             </div>
         </>
     )

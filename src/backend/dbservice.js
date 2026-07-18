@@ -169,6 +169,71 @@ export class DbService {
         }
     }
 
+    getEmployeeSummary(month, year) {
+        try {
+            const query = this.#db.prepare(`
+                select e.id as employee_key,
+                       e.last_name || ', ' || e.first_name as employee_name,
+                       a.type_code,
+                       count(a.type_code) as count
+                  from employees e
+                  left join absences a
+                    on a.employee_id = e.id
+                   and cast(strftime('%m', a.datetime) as integer) = $month
+                   and cast(strftime('%Y', a.datetime) as integer) = $year
+                 where e.active = 'Y'
+                 group by e.id, a.type_code 
+                 order by e.last_name, e.first_name, e.employee_id asc;
+            `)
+            return query.all({ $month: month, $year: year });
+        } catch (error) {
+            console.log(`Error fetching Employee Summary Data: ${error}`)
+            return [];
+        }
+    }
+
+    getTypeMonthlySummary(month, year) {
+        try {
+            const query = this.#db.prepare(`
+                select t.code,
+                       t.description,
+                       count(a.type_code) as count
+                  from types t
+                  left join absences a  
+                    on a.type_code = t.code 
+                   and cast(strftime('%m', a.datetime) as integer) = $month
+                   and cast(strftime('%Y', a.datetime) as integer) = $year
+                 group by t.code  
+                 order by t.code asc;
+            `)
+            return query.all({ $month: month, $year: year });
+        } catch (error) {
+            console.log(`Error fetching Type Monthly Summary ${month}/${year}: ${error}`)
+            return [];
+        }
+    }
+
+    getTypeDailySummary(month, year) {
+        try {
+            const query = this.#db.prepare(`
+                select t.code,
+                       t.description,
+                       date(a.datetime) as date,
+                       count(a.type_code) as count
+                  from types t
+                  left join absences a  
+                    on a.type_code = t.code 
+                   and cast(strftime('%m', a.datetime) as integer) = $month
+                   and cast(strftime('%Y', a.datetime) as integer) = $year
+                 group by t.code, t.description, date(a.datetime);
+            `)
+            return query.all({ $month: month, $year: year });
+        } catch (error) {
+            console.log(`Error fetching Type Daily Summary ${month}/${year}: ${error}`)
+            return [];
+        }
+    }
+
     getAbsenceHighlight(queryJson) {
         try {
             const query = this.#db.prepare(`
@@ -206,6 +271,7 @@ export class DbService {
                    and date(a.datetime) = $dateStr
                  order by a.id;
             `);
+            console.log(`Fetching absence details for employee ID ${emplId} on date ${absDate}`);
             return query.all({ $eid: emplId, $dateStr: absDate });
         } catch (error) {
             console.error(`Error fetching absence details for date ${absDate}: ${error}`);

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('node:path');
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -8,6 +8,23 @@ if (require('electron-squirrel-startup')) {
 
 import { DbService } from './backend/dbservice.js';
 
+
+ipcMain.handle('dialog:saveExplorer', async (event, options = {}) => {
+  const result = await dialog.showSaveDialog({
+    title: 'Save File As',
+    ...options
+  });
+
+  if (result.canceled) {
+    return null;
+  }
+
+  return result.filepath;
+})
+
+/**
+ * DB Service Start
+ */
 let dbService;
 try {
   dbService = new DbService();
@@ -34,6 +51,18 @@ ipcMain.handle('db:get-active-employees', () => {
 
 ipcMain.handle('db:get-absence-table', (event, month, year) => {
   return dbService.getAbsenceTable(month, year);
+});
+
+ipcMain.handle('db:get-employee-summary', (event, month, year) => {
+  return dbService.getEmployeeSummary(month, year);
+});
+
+ipcMain.handle('db:get-type-monthly-summary', (event, month, year) => {
+  return dbService.getTypeMonthlySummary(month, year);
+});
+
+ipcMain.handle('db:get-type-daily-summary', (event, month, year) => {
+  return dbService.getTypeDailySummary(month, year);
 });
 
 ipcMain.handle('db:get-absence-day-details', (event, emplId, absDate) => {
@@ -95,6 +124,10 @@ ipcMain.handle('db:update-site', (event, updatedRecordJson) => {
 ipcMain.handle('db-delete-absence', (event, deletedRecordId) => {
   return dbService.deleteAbsence(deletedRecordId);
 });
+
+/**
+ * DB Service End
+ */
 
 const createWindow = () => {
   // Create the browser window.

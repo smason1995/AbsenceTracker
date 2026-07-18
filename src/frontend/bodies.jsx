@@ -1,10 +1,11 @@
-import React, { use } from 'react';
+import React from 'react';
 import {
     useState,
     useEffect,
-    useRef
+    useRef,
+    useMemo
 } from 'react';
-import * as Popover from '@radix-ui/react-popover'
+import * as Popover from '@radix-ui/react-popover';
 
 import {
     DownloadIcon,
@@ -19,6 +20,7 @@ function AbsenceDayDetails({ row, day, month, year, onSaveComplete }) {
     const [sites, setSites] = useState([]);
     const [existingData, setExistingData] = useState([]);
     const [activeCommentDraft, setActiveCommentDraft] = useState({ index: null, text: "" });
+
     const deletedIdsRef = useRef([]);
 
     const syncRef = useRef({ existingData, deletedIds: [] });
@@ -36,7 +38,7 @@ function AbsenceDayDetails({ row, day, month, year, onSaveComplete }) {
             .then((data) => setSites(data || []))
             .catch((error) => console.error(`Database IPC retrieval failure: ${error}`));
 
-        const cellDate = `${year}-${String(month + 1).padStart(2, '0')}-${day}`;
+        const cellDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         window.api.getAbsenceDayDetails(row.employee_key, cellDate)
             .then((data) => setExistingData(data || []))
             .catch((error) => console.error(`Database IPC retrieval failure: ${error}`));
@@ -491,40 +493,301 @@ export const EmployeeDataSection = ({
     )
 };
 
-export const EmployeeSummarySection = () => {
+export const EmployeeSummarySection = ({
+    absenceTableJson = [],
+    month, year
+}) => {
+    const [tableData, setTableData] = useState([]);
+    const [typeList, setTypeList] = useState([]);
+
+    useEffect(() => {
+        // Safe check to prevent NaN query payload drops
+        if (month === undefined || year === undefined) return;
+
+        window.api.getEmployeeSummary(month + 1, year)
+            .then((data) => setTableData(data || [])) // Fallback wrapper protection
+            .catch((error) => console.error(`Database IPC retrieval failure: ${error}`));
+
+        window.api.getAllTypes()
+            .then((data) => setTypeList(data || []))
+            .catch((error) => console.error(`Database IPC retrieval failure: ${error}`));
+    }, [absenceTableJson, month, year]);
+
+    const groupedTableRows = useMemo(() => {
+        const employeeMap = {};
+        const cleanTableData = Array.isArray(tableData) ? tableData : [];
+
+        cleanTableData.forEach((row) => {
+            const key = row.employee_key;
+
+            if (!employeeMap[key]) {
+                employeeMap[key] = {
+                    employee_key: key,
+                    employee_name: row.employee_name,
+                    typeCounts: {}
+                };
+            }
+
+            if (row.type_code) {
+                employeeMap[key].typeCounts[row.type_code] = row.count;
+            }
+        });
+
+        // FIX: Explicitly sort alphabetically by name to bypass JS object key re-ordering quirks
+        return Object.values(employeeMap).sort((a, b) => {
+            return a.employee_name.localeCompare(b.employee_name, undefined, { sensitivity: 'base' });
+        });
+    }, [tableData]);
+
     return (
         <>
             <div className="employee-summary-section">
                 <button className="download-button">
                     <DownloadIcon size={24} />
                 </button>
-                TODO: Insert Employee Summary Table
+                <div className="matrix-table-scroll-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                {typeList.length > 0 &&
+                                    typeList.map((headRow, index) => {
+                                        return (
+                                            <th key={headRow.code || index}>{headRow.code}</th>
+                                        )
+                                    })}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {groupedTableRows.length === 0 ? (
+                                <tr>
+                                    <td colSpan={typeList.length + 1}>
+                                        No active summary tracking information found.
+                                    </td>
+                                </tr>
+                            ) : (
+                                groupedTableRows.map((empRow) => {
+                                    return (
+                                        <tr key={empRow.employee_key}>
+                                            <td className="employee-name-cell">
+                                                {empRow.employee_name}
+                                            </td>
+                                            {typeList.map((typeCategory, index) => {
+                                                const typeIdentifier = typeCategory.code || typeCategory.type_code;
+
+                                                // Instantly read aggregate values out of local mapping object
+                                                const countValue = empRow.typeCounts[typeIdentifier] || 0;
+
+                                                return (
+                                                    <td
+                                                        key={typeIdentifier || index}
+                                                        style={{ textAlign: 'center' }}
+                                                        className={countValue > 0 ? 'has-summary-count' : 'empty-count'}
+                                                    >
+                                                        {countValue > 0 ? countValue : '-'}
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    );
+                                })
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </>
     )
 };
 
-export const TypesDailySummarySection = () => {
+export const TypesDailySummarySection = ({
+    absenceTableJson = [],
+    month, year
+}) => {
+    const [tableData, setTableData] = useState([]);
+    const [daysInMonth, setDaysInMonth] = useState([]);
+
+    useEffect(() => {
+        // Prevent calling if dates are uninitialized
+        if (month === undefined || year === undefined) return;
+
+        window.api.getTypeDailySummary(month + 1, year)
+            .then((data) => setTableData(data || [])) // Defensive fallback wrapper
+            .catch((error) => {
+                console.error(`Database IPC retrieval failure: ${error}`);
+                setTableData([]);
+            });
+
+        const totalDays = new Date(year, month + 1, 0).getDate();
+        const daysArray = Array.from({ length: totalDays }, (_, i) => i + 1);
+        setDaysInMonth(daysArray);
+    }, [absenceTableJson, month, year]);
+
+    // Pivot flat query data into a fast O(1) keyed lookup map
+    const pivotedRows = useMemo(() => {
+        const cleanTableData = Array.isArray(tableData) ? tableData : [];
+        const typeMap = {};
+
+        cleanTableData.forEach((row) => {
+            const key = row.code;
+
+            if (!typeMap[key]) {
+                typeMap[key] = {
+                    code: row.code,
+                    description: row.description,
+                    dailyCounts: {} // Indexed lookup: { 1: count, 15: count }
+                };
+            }
+
+            // Parse 'YYYY-MM-DD' down to just the day integer
+            if (row.date) {
+                const dayNum = parseInt(row.date.split('-')[2], 10);
+                typeMap[key].dailyCounts[dayNum] = row.count;
+            }
+        });
+
+        // Alphabetize the output matrix rows by the type code designation
+        return Object.values(typeMap).sort((a, b) => a.code.localeCompare(b.code));
+    }, [tableData]);
+
+    console.log(`Days Array: ${daysInMonth}`)
+
     return (
         <>
             <div className="types-daily-summary-section">
                 <button className="download-button">
                     <DownloadIcon size={24} />
                 </button>
-                TODO: Insert Types Daily Table
+                <div className="matrix-table-scroll-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Absence Type</th>
+                                {daysInMonth.length > 0 &&
+                                    daysInMonth.map((day) => (
+                                        // Fixed: Swapped to an implicit return statement
+                                        <th key={day} style={{ minWidth: '30px', textAlign: 'center' }}>
+                                            {day}
+                                        </th>
+                                    ))
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {pivotedRows.length === 0 ? (
+                                <tr>
+                                    <td colSpan={daysInMonth.length + 1} style={{ textAlign: 'center', padding: '12px' }}>
+                                        No tracking records recorded for this period.
+                                    </td>
+                                </tr>
+                            ) : (
+                                pivotedRows.map((typeRow) => (
+                                    <tr key={typeRow.code}>
+                                        <td className="type-description-cell" title={`${typeRow.code} - ${typeRow.description}`}>
+                                            {typeRow.description}
+                                        </td>
+                                        {daysInMonth.map((day) => {
+                                            const countValue = typeRow.dailyCounts[day] || 0;
+                                            return (
+                                                <td
+                                                    key={day}
+                                                    style={{ textAlign: 'center' }}
+                                                    className={countValue > 0 ? 'has-summary-count' : 'empty-count'}
+                                                >
+                                                    {countValue > 0 ? countValue : '-'}
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </>
     )
 };
 
-export const TypesMonthlySummarySection = () => {
+export const TypesMonthlySummarySection = ({
+    absenceTableJson = [],
+    month, year
+}) => {
+    const [tableData, setTableData] = useState([]);
+
+    useEffect(() => {
+        window.api.getTypeMonthlySummary(month + 1, year)
+            .then((data) => setTableData(data))
+            .catch((error) => console.error(`Database IPC retrieval failure: ${error}`));
+    }, [absenceTableJson, month, year]);
+
+    const handleFileDownload = async () => {
+        if (!tableData || tableData.length === 0) return;
+
+        const table = document.getElementById('types-monthly-table')
+        const headers = Array.from(table.querySelectorAll("thead th"))
+            .map(th => th.innerText.trim());
+
+        const bodyRows = Array.from(table.querySelectorAll("tbody tr"));
+
+        const exportPayload = bodyRows.map((row) => {
+            const cells = Array.from(row.querySelectorAll("td"));
+            const rowItem = {};
+
+            headers.forEach((header, index) => {
+                const cellText = cells[index]?.innerText.trim() || "";
+
+                // Convert count string strings back into numeric representations for Excel engine
+                const numericValue = Number(cellText);
+                rowItem[header] = (!isNaN(numericValue) && cellText !== "-") ? numericValue : cellText;
+            });
+
+            // 4. Re-inject visual highlight rules based on the scraped content properties
+            if (rowItem['Monthly Count'] > 0) {
+                rowItem._rowColor = 'FFE6F4EA'; // Soft green highlight flag
+            }
+
+            return rowItem;
+        });
+
+        console.log(`
+            Export Payload:
+            ${JSON.stringify(exportPayload)}
+            `)
+    }
+
     return (
         <>
             <div className="types-monthly-summary-section">
-                <button className="download-button">
+                <button
+                    className="download-button"
+                    onClick={handleFileDownload}
+                    disabled={tableData.length === 0}
+                    title="Export table to Excel"
+                >
                     <DownloadIcon size={24} />
                 </button>
-                TODO: Insert Types Monthly Table
+                <div className="matrix-table-scroll-wrapper">
+                    <table id="types-monthly-table">
+                        <thead>
+                            <tr>
+                                <th>Absence Type</th>
+                                <th>Monthly Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {tableData.length > 0 &&
+                                tableData.map((dataRow, index) => {
+                                    return (
+                                        <tr key={index}>
+                                            <td>{dataRow.description}</td>
+                                            <td>{dataRow.count}</td>
+                                        </tr>
+                                    )
+                                })}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </>
     )
