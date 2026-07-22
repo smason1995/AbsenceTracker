@@ -1,6 +1,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import fs from 'node:fs';
 
 export class DbService {
     #db;
@@ -8,7 +9,15 @@ export class DbService {
     constructor() {
         const filename = fileURLToPath(import.meta.url);
         const dirname = path.dirname(filename);
-        this.dbPath = path.resolve(dirname, 'app.db');
+        const localDbPath = path.resolve(dirname, 'app.db');
+
+        const resourceDbPath = process.resourcesPath
+            ? path.join(process.resourcesPath, 'app.db')
+            : localDbPath;
+
+        this.dbPath = fs.existsSync(resourceDbPath)
+            ? resourceDbPath
+            : localDbPath;
 
         try {
             this.#db = new DatabaseSync(this.dbPath);
@@ -431,7 +440,7 @@ export class DbService {
                 $startDate: startDate || null,
                 $endDate: endDate || null
             });
-            
+
             return results;
 
         } catch (error) {

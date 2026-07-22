@@ -4,6 +4,9 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 module.exports = {
   packagerConfig: {
     asar: true,
+    extraResources: [
+      'src/backend/app.db'
+    ]
   },
   rebuildConfig: {},
   makers: [
@@ -21,6 +24,10 @@ module.exports = {
     },
     {
       name: '@electron-forge/maker-rpm',
+      config: {},
+    },
+    {
+      name: 'electron-forge-maker-appimage',
       config: {},
     },
   ],

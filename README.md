@@ -24,6 +24,11 @@ AbsenceTracker is an Electron desktop application for tracking employee absences
 - Node.js 20+ (or compatible with Electron 42 runtime)
 - npm
 
+For Cross Platform compilation to Windows from Linux, ensure the following:
+- Wine and Mono are are installed (required by squirrel)
+- /usr/bin/wine64 exists
+    - You can `sudo ln -s $(which wine) /usr/bin/wine64` if your systems makes a /usr/bin/wine instead
+
 ## Getting Started
 
 ```bash
