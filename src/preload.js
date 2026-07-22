@@ -51,5 +51,7 @@ contextBridge.exposeInMainWorld('api', {
     setExportPath: (path) => ipcRenderer.invoke('export:set-export-path', path),
     generateEmployeeReport: (reportJson) => ipcRenderer.invoke('export:employee-report', reportJson),
     generateAbsenceMatrixReport: (matrixJson) => ipcRenderer.invoke('export:absence-matrix-report', matrixJson),
-    generateTypesDailyMatrixReport: (matrixJson) => ipcRenderer.invoke('export:type-daily-matrix-report', matrixJson)
+    generateTypesDailyMatrixReport: (matrixJson) => ipcRenderer.invoke('export:type-daily-matrix-report', matrixJson),
+    generateEmployeeMonthlyMatrixReport: (matrixJson) => ipcRenderer.invoke('export:employee-monthly-matrix-report', matrixJson),
+    generateTypesMonthlyMatrixReport: (matrixJson) => ipcRenderer.invoke('export:types-monthly-matrix-report', matrixJson)
 });

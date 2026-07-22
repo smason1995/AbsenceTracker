@@ -448,6 +448,10 @@ export const EmployeeDataSection = ({
                         ]
                     })
 
+                    if (!path) {
+                        return;
+                    }
+
                     const exportResult = await window.api.generateAbsenceMatrixReport(tableExportJson);
 
                     if (exportResult.success) {
@@ -666,28 +670,32 @@ export const EmployeeSummarySection = ({
                     tableExportJson.data = tableData;
                     console.log("Export JSON payload prepared:", JSON.stringify(tableExportJson));
 
-                    // // 5. [Asynchronous] Request the export service to generate the Excel file
-                    // const startPath = await window.api.getExportPath();
+                    // 5. [Asynchronous] Request the export service to generate the Excel file
+                    const startPath = await window.api.getExportPath();
 
-                    // const defaultPath = await window.api.getDefaultPath((startPath ? startPath : savePath), `Absence_Table_Export_${new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14)}.xlsx`);
+                    const defaultPath = await window.api.getDefaultPath((startPath ? startPath : savePath), `Employee_Monthly_Summary_Export_${new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14)}.xlsx`);
 
-                    // const path = await window.api.saveFilePicker({
-                    //     title: 'Select Save Location for Employee Report',
-                    //     defaultPath: defaultPath,
-                    //     buttonLabel: 'Save Report',
-                    //     filters: [
-                    //         { name: 'Excel Files', extensions: ['xlsx'] },
-                    //         { name: 'All Files', extensions: ['*'] }
-                    //     ]
-                    // })
+                    const path = await window.api.saveFilePicker({
+                        title: 'Select Save Location for Employee Report',
+                        defaultPath: defaultPath,
+                        buttonLabel: 'Save Report',
+                        filters: [
+                            { name: 'Excel Files', extensions: ['xlsx'] },
+                            { name: 'All Files', extensions: ['*'] }
+                        ]
+                    })
 
-                    // const exportResult = await window.api.generateAbsenceMatrixReport(tableExportJson);
+                    if (!path) {
+                        return;
+                    }
 
-                    // if (exportResult.success) {
-                    //     console.log(`Report successfully exported to: ${exportResult.message}`);
-                    // } else {
-                    //     console.error(`Error exporting report: ${exportResult.message}`);
-                    // }
+                    const exportResult = await window.api.generateEmployeeMonthlyMatrixReport(tableExportJson);
+
+                    if (exportResult.success) {
+                        console.log(`Report successfully exported to: ${exportResult.message}`);
+                    } else {
+                        console.error(`Error exporting report: ${exportResult.message}`);
+                    }
 
                 } catch (error) {
                     // Any DOM scraping exceptions or IPC rejections land safely here!
@@ -806,7 +814,7 @@ export const TypesDailySummarySection = ({
             })
             .catch((error) => console.error(`Failed to retrieve export path: ${error}`));
     }, []);
-    
+
     useEffect(() => {
         // Prevent calling if dates are uninitialized
         if (month === undefined || year === undefined) return;
@@ -885,6 +893,10 @@ export const TypesDailySummarySection = ({
                             { name: 'All Files', extensions: ['*'] }
                         ]
                     })
+
+                    if (!path) {
+                        return;
+                    }
 
                     const exportResult = await window.api.generateTypesDailyMatrixReport(tableExportJson);
 
@@ -1007,7 +1019,7 @@ export const TypesMonthlySummarySection = ({
             })
             .catch((error) => console.error(`Failed to retrieve export path: ${error}`));
     }, []);
-    
+
     useEffect(() => {
         window.api.getTypeMonthlySummary(month + 1, year)
             .then((data) => setTableData(data))
@@ -1061,28 +1073,32 @@ export const TypesMonthlySummarySection = ({
                     tableExportJson.data = tableData;
                     console.log("Export JSON payload prepared:", JSON.stringify(tableExportJson));
 
-                    // // 5. [Asynchronous] Request the export service to generate the Excel file
-                    // const startPath = await window.api.getExportPath();
+                    // 5. [Asynchronous] Request the export service to generate the Excel file
+                    const startPath = await window.api.getExportPath();
 
-                    // const defaultPath = await window.api.getDefaultPath((startPath ? startPath : savePath), `Absence_Table_Export_${new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14)}.xlsx`);
+                    const defaultPath = await window.api.getDefaultPath((startPath ? startPath : savePath), `Types_Monthly_Summary_Export_${new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14)}.xlsx`);
 
-                    // const path = await window.api.saveFilePicker({
-                    //     title: 'Select Save Location for Employee Report',
-                    //     defaultPath: defaultPath,
-                    //     buttonLabel: 'Save Report',
-                    //     filters: [
-                    //         { name: 'Excel Files', extensions: ['xlsx'] },
-                    //         { name: 'All Files', extensions: ['*'] }
-                    //     ]
-                    // })
+                    const path = await window.api.saveFilePicker({
+                        title: 'Select Save Location for Employee Report',
+                        defaultPath: defaultPath,
+                        buttonLabel: 'Save Report',
+                        filters: [
+                            { name: 'Excel Files', extensions: ['xlsx'] },
+                            { name: 'All Files', extensions: ['*'] }
+                        ]
+                    })
 
-                    // const exportResult = await window.api.generateAbsenceMatrixReport(tableExportJson);
+                    if (!path) {
+                        return;
+                    }
 
-                    // if (exportResult.success) {
-                    //     console.log(`Report successfully exported to: ${exportResult.message}`);
-                    // } else {
-                    //     console.error(`Error exporting report: ${exportResult.message}`);
-                    // }
+                    const exportResult = await window.api.generateTypesMonthlyMatrixReport(tableExportJson);
+
+                    if (exportResult.success) {
+                        console.log(`Report successfully exported to: ${exportResult.message}`);
+                    } else {
+                        console.error(`Error exporting report: ${exportResult.message}`);
+                    }
 
                 } catch (error) {
                     // Any DOM scraping exceptions or IPC rejections land safely here!

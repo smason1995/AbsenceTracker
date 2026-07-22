@@ -22,7 +22,7 @@ ipcMain.handle('dialog:saveExplorer', async (event, options = {}) => {
     ...options
   });
 
-  if (result.canceled) {
+  if (result.canceled || !result.filePath) {
     return null;
   }
 
@@ -156,6 +156,12 @@ ipcMain.handle('export:absence-matrix-report', async (event, matrixJson) => {
 });
 ipcMain.handle('export:type-daily-matrix-report', async (event, matrixJson) => {
   return await exportService.typeDailyMatrixReport(matrixJson);
+});
+ipcMain.handle('export:employee-monthly-matrix-report', async (event, matrixJson) => {
+  return await exportService.employeeMonthlyMatrixReport(matrixJson);
+});
+ipcMain.handle('export:types-monthly-matrix-report', async (event, matrixJson) => {
+  return await exportService.typesMonthlyMatrixReport(matrixJson);
 });
 
 /**
