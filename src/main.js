@@ -7,7 +7,14 @@ if (require('electron-squirrel-startup')) {
 }
 
 import { DbService } from './backend/dbservice.js';
+import { ExportService } from './backend/exportservice.js';
 
+ipcMain.handle('dialog:getDefaultPath', (event, defaultFolder, defaultFileName) => {
+  if (defaultFolder && defaultFileName) {
+    return path.join(defaultFolder, defaultFileName);
+  }
+  return null;
+});
 
 ipcMain.handle('dialog:saveExplorer', async (event, options = {}) => {
   const result = await dialog.showSaveDialog({
@@ -19,7 +26,7 @@ ipcMain.handle('dialog:saveExplorer', async (event, options = {}) => {
     return null;
   }
 
-  return result.filepath;
+  return result.filePath;
 })
 
 /**
@@ -32,97 +39,123 @@ try {
   console.error(`Critical: Failed to start DB Service: ${error}`);
 }
 
+let exportService;
+try {
+  exportService = new ExportService();
+} catch (error) {
+  console.error(`Critical: Failed to start Export Service: ${error}`);
+}
+
 // IPC Listeners mapping the preload triggers to the class methods
+// DB Service GetAll
 ipcMain.handle('db:get-all-types', () => {
   return dbService.getAllTypes();
 });
-
 ipcMain.handle('db:get-all-certs', () => {
   return dbService.getAllCerts();
 });
-
 ipcMain.handle('db:get-all-sites', () => {
   return dbService.getAllSites();
 });
+ipcMain.handle('db:get-all-employees', () => {
+  return dbService.getAllEmployees();
+});
 
+// DB Service Get
 ipcMain.handle('db:get-active-employees', () => {
   return dbService.getActiveEmployees();
 });
-
 ipcMain.handle('db:get-absence-table', (event, month, year) => {
   return dbService.getAbsenceTable(month, year);
 });
-
 ipcMain.handle('db:get-employee-summary', (event, month, year) => {
   return dbService.getEmployeeSummary(month, year);
 });
-
 ipcMain.handle('db:get-type-monthly-summary', (event, month, year) => {
   return dbService.getTypeMonthlySummary(month, year);
 });
-
 ipcMain.handle('db:get-type-daily-summary', (event, month, year) => {
   return dbService.getTypeDailySummary(month, year);
 });
-
 ipcMain.handle('db:get-absence-day-details', (event, emplId, absDate) => {
   return dbService.getAbsenceDayDetails(emplId, absDate);
 });
-
 ipcMain.handle('db:get-active-sites', () => {
   return dbService.getActiveSites();
 });
-
-ipcMain.handle('db:get-all-employees', () => {
-  return dbService.getAllEmployees();
-})
-
 ipcMain.handle('db:get-absence-highlight', (event, queryJson) => {
   return dbService.getAbsenceHighlight(queryJson);
-})
+});
 
+// DB Service Get Report
+ipcMain.handle('db:get-all-employee-report', (event, fullHistory, startDate, endDate) => {
+  return dbService.getAllEmployeeReport(fullHistory, startDate, endDate);
+});
+ipcMain.handle('db:get-inactive-employee-report', (event, fullHistory, startDate, endDate) => {
+  return dbService.getInactiveEmployeeReport(fullHistory, startDate, endDate);
+});
+ipcMain.handle('db:get-active-employee-report', (event, fullHistory, startDate, endDate) => {
+  return dbService.getActiveEmployeeReport(fullHistory, startDate, endDate);
+});
+ipcMain.handle('db:get-single-employee-report', (event, emplId, fullHistory, startDate, endDate) => {
+  return dbService.getSingleEmployeeReport(emplId, fullHistory, startDate, endDate);
+});
+
+// DB Service Insert
 ipcMain.handle('db:insert-absence', (event, newRecordJson) => {
   return dbService.insertAbsence(newRecordJson);
 });
-
 ipcMain.handle('db:insert-employee', (event, newRecordJson) => {
   return dbService.insertEmployee(newRecordJson);
 });
-
 ipcMain.handle('db:insert-employee-cert', (event, newRecordJson) => {
   return dbService.insertEmployeeCert(newRecordJson);
 });
-
 ipcMain.handle('db:insert-site', (event, newRecordJson) => {
   return dbService.insertSite(newRecordJson);
 });
-
 ipcMain.handle('db:insert-cert', (event, newRecordJson) => {
   return dbService.insertCert(newRecordJson);
 });
-
 ipcMain.handle('db:insert-type', (event, newRecordJson) => {
   return dbService.insertType(newRecordJson);
 });
 
+// DB Service Update
 ipcMain.handle('db:update-absence', (event, updatedRecordJson) => {
   return dbService.updateAbsence(updatedRecordJson);
 });
-
 ipcMain.handle('db:update-employee', (event, updatedRecordJson) => {
   return dbService.updateEmployee(updatedRecordJson);
 });
-
 ipcMain.handle('db:update-employee-cert', (event, updatedRecordJson) => {
   return dbService.updateEmployeeCert(updatedRecordJson);
 });
-
 ipcMain.handle('db:update-site', (event, updatedRecordJson) => {
   return dbService.updateSite(updatedRecordJson);
 });
 
+// DB service Delete
 ipcMain.handle('db-delete-absence', (event, deletedRecordId) => {
   return dbService.deleteAbsence(deletedRecordId);
+});
+
+//Export Report API
+ipcMain.handle('export:get-export-path', (event) => {
+  return exportService.getExportPath();
+});
+ipcMain.handle('export:set-export-path', (event, newPath) => {
+  exportService.setExportPath(newPath);
+  return { success: true, message: `Export path updated to: ${newPath}` };
+});
+ipcMain.handle('export:employee-report', async (event, reportJson) => {
+  return await exportService.employeeReport(reportJson);
+});
+ipcMain.handle('export:absence-matrix-report', async (event, matrixJson) => {
+  return await exportService.absenceMatrixReport(matrixJson);
+});
+ipcMain.handle('export:type-daily-matrix-report', async (event, matrixJson) => {
+  return await exportService.typeDailyMatrixReport(matrixJson);
 });
 
 /**

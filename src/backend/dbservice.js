@@ -295,12 +295,195 @@ export class DbService {
                     on c.certs_id = c2.id
                  group by e.id;
             `);
-            return query.all();
+            const results = query.all();
+            return results;
         } catch (error) {
             console.log(`Error fetching employee list: ${error}`);
             return [];
         }
     }
+
+    /* Report Queries */
+    getSingleEmployeeReport(employeeId, fullHistory, startDate, endDate) {
+        try {
+            const queryText = `
+                select e.employee_id,
+                       e.first_name || ' ' || e.last_name as employee,
+                       s.name as site,
+                       t.description,
+                       a.minutes,
+                       a.comment,
+                       strftime('%m/%d/%Y', a.datetime) as absence_date,
+                       strftime('%I:%M %p', a.datetime) as absence_time,
+                       case 
+                           when a.id is not null and 3 <= (select count(a2.id)
+                                                             from absences a2
+                                                            where a2.employee_id = a.employee_id
+                                                              and date(a2.datetime) >= date(a.datetime, '-30 days')
+                                                              and date(a2.datetime) <= date(a.datetime)) 
+                           then 'Y'
+                           else 'N'
+                       end as limit_check
+                  from employees e
+                  left join absences a on e.id = a.employee_id
+                    and ($fullHistory = 1 or (a.datetime >= $startDate and a.datetime <= $endDate))
+                  left join sites s on a.site_id = s.id
+                  left join types t on a.type_code = t.code
+                 where e.id = $eid
+                 order by e.first_name, e.last_name, a.datetime asc;
+            `;
+
+            const statement = this.#db.prepare(queryText);
+
+            const results = statement.all({
+                $eid: employeeId,
+                $fullHistory: fullHistory ? 1 : 0,
+                $startDate: startDate || null,
+                $endDate: endDate || null
+            });
+
+            return results;
+
+        } catch (error) {
+            console.error(`Error fetching single employee report: ${error}`);
+            return [];
+        }
+    }
+
+    getActiveEmployeeReport(fullHistory, startDate, endDate) {
+        try {
+            const queryText = `
+                select e.employee_id,
+                       e.first_name || ' ' || e.last_name as employee,
+                       s.name as site,
+                       t.description,
+                       a.minutes,
+                       a.comment,
+                       strftime('%m/%d/%Y', a.datetime) as absence_date,
+                       strftime('%I:%M %p', a.datetime) as absence_time,
+                       case 
+                           when a.id is not null and 3 <= (select count(a2.id)
+                                                             from absences a2
+                                                            where a2.employee_id = a.employee_id
+                                                              and date(a2.datetime) >= date(a.datetime, '-30 days')
+                                                              and date(a2.datetime) <= date(a.datetime)) 
+                           then 'Y'
+                           else 'N'
+                       end as limit_check
+                  from employees e
+                  left join absences a on e.id = a.employee_id
+                    and ($fullHistory = 1 or (a.datetime >= $startDate and a.datetime <= $endDate))
+                  left join sites s on a.site_id = s.id
+                  left join types t on a.type_code = t.code
+                 where e.active = 'Y'
+                 order by e.first_name, e.last_name, a.datetime asc;
+            `;
+
+            const statement = this.#db.prepare(queryText);
+
+            const results = statement.all({
+                $fullHistory: fullHistory ? 1 : 0,
+                $startDate: startDate || null,
+                $endDate: endDate || null
+            });
+
+            return results;
+
+        } catch (error) {
+            console.error(`Error fetching active employee report: ${error}`);
+            return [];
+        }
+    }
+
+    getInactiveEmployeeReport(fullHistory, startDate, endDate) {
+        try {
+            const queryText = `
+                select e.employee_id,
+                       e.first_name || ' ' || e.last_name as employee,
+                       s.name as site,
+                       t.description,
+                       a.minutes,
+                       a.comment,
+                       strftime('%m/%d/%Y', a.datetime) as absence_date,
+                       strftime('%I:%M %p', a.datetime) as absence_time,
+                       case 
+                           when a.id is not null and 3 <= (select count(a2.id)
+                                                             from absences a2
+                                                            where a2.employee_id = a.employee_id
+                                                              and date(a2.datetime) >= date(a.datetime, '-30 days')
+                                                              and date(a2.datetime) <= date(a.datetime)) 
+                           then 'Y'
+                           else 'N'
+                       end as limit_check
+                  from employees e
+                  left join absences a on e.id = a.employee_id
+                    and ($fullHistory = 1 or (a.datetime >= $startDate and a.datetime <= $endDate))
+                  left join sites s on a.site_id = s.id
+                  left join types t on a.type_code = t.code
+                 where e.active = 'N'
+                 order by e.first_name, e.last_name, a.datetime asc;
+            `;
+
+            const statement = this.#db.prepare(queryText);
+
+            const results = statement.all({
+                $fullHistory: fullHistory ? 1 : 0,
+                $startDate: startDate || null,
+                $endDate: endDate || null
+            });
+            
+            return results;
+
+        } catch (error) {
+            console.error(`Error fetching inactive employee report: ${error}`);
+            return [];
+        }
+    }
+
+    getAllEmployeeReport(fullHistory, startDate, endDate) {
+        try {
+            const queryText = `
+                select e.employee_id,
+                       e.first_name || ' ' || e.last_name as employee,
+                       s.name as site,
+                       t.description,
+                       a.minutes,
+                       a.comment,
+                       strftime('%m/%d/%Y', a.datetime) as absence_date,
+                       strftime('%I:%M %p', a.datetime) as absence_time,
+                       case 
+                           when a.id is not null and 3 <= (select count(a2.id)
+                                                             from absences a2
+                                                            where a2.employee_id = a.employee_id
+                                                              and date(a2.datetime) >= date(a.datetime, '-30 days')
+                                                              and date(a2.datetime) <= date(a.datetime)) 
+                           then 'Y'
+                           else 'N'
+                       end as limit_check
+                  from employees e
+                  left join absences a on e.id = a.employee_id
+                    and ($fullHistory = 1 or (a.datetime >= $startDate and a.datetime <= $endDate))
+                  left join sites s on a.site_id = s.id
+                  left join types t on a.type_code = t.code
+                 order by e.first_name, e.last_name, a.datetime asc;
+            `;
+
+            const statement = this.#db.prepare(queryText);
+
+            const results = statement.all({
+                $fullHistory: fullHistory ? 1 : 0,
+                $startDate: startDate || null,
+                $endDate: endDate || null
+            });
+
+            return results;
+
+        } catch (error) {
+            console.error(`Error fetching all employee report: ${error}`);
+            return [];
+        }
+    }
+
 
     /* Data Insert*/
     insertAbsence(newRecordJson) {

@@ -329,12 +329,23 @@ export const EmployeeDataSection = ({
     const [daysInMonth, setDaysInMonth] = useState([]);
     // Minimal change: Changed initial state pattern to an object map for instant lookups
     const [highlightedCells, setHighlightedCells] = useState({});
+    const [exportClickCount, setExportClickCount] = useState(0);
+    const [savePath, setSavePath] = useState(null);
 
     const refreshTableData = () => {
         window.api.getAbsenceTable(month + 1, year)
             .then((data) => setAbsenceTableJson(data))
             .catch((error) => console.error(`Database IPC retrieval failure: ${error}`));
     };
+
+    useEffect(() => {
+        // Backup default path
+        window.api.getExportPath()
+            .then((path) => {
+                setSavePath(path);
+            })
+            .catch((error) => console.error(`Failed to retrieve export path: ${error}`));
+    }, []);
 
     useEffect(() => {
         refreshTableData();
@@ -375,10 +386,90 @@ export const EmployeeDataSection = ({
         return () => { isCurrentBatch = false; };
     }, [absenceTableJson, daysInMonth, month, year]);
 
+    // useEffect to handle grabbing the table data from UI for export
+    useEffect(() => {
+        if (exportClickCount > 0) {
+
+            const executeExport = async () => {
+                try {
+                    // 1. [Synchronous] Setup baseline metadata
+                    const tableExportJson = {
+                        meta: {
+                            month: month,
+                            year: year
+                        }
+                    };
+
+                    // 2. [Synchronous] Get HTML Table from DOM
+                    const tableElement = document.querySelector('.matrix-table-scroll-wrapper table#employee-data-table');
+                    if (!tableElement) {
+                        throw new Error("Target matrix HTML table could not be found in the DOM.");
+                    }
+
+                    // 3. [Synchronous] Extract Table Headers and Rows
+                    const tableData = [];
+                    const headers = Array.from(tableElement.querySelectorAll('thead th')).map(th => th.textContent.trim());
+                    const rows = tableElement.querySelectorAll('tbody tr');
+
+                    // 4. [Synchronous] Iterate over each row and extract cell data
+                    rows.forEach(row => {
+                        const rowData = {};
+                        const cells = row.querySelectorAll('td');
+                        cells.forEach((cell, index) => {
+                            const header = headers[index];
+                            if (header === 'Name') {
+                                rowData[header] = cell.textContent.trim();
+                            } else {
+                                rowData[header] = {
+                                    text: cell.textContent.trim(),
+                                    highlight: cell.classList.contains('has-absence') ? 1 : 0
+                                };
+                            }
+                        });
+                        tableData.push(rowData);
+                    });
+
+                    // Add your scraped data to your meta object if your service needs it combined:
+                    tableExportJson.data = tableData;
+                    console.log("Export JSON payload prepared:", JSON.stringify(tableExportJson));
+
+                    // 5. [Asynchronous] Request the export service to generate the Excel file
+                    const startPath = await window.api.getExportPath();
+
+                    const defaultPath = await window.api.getDefaultPath((startPath ? startPath : savePath), `Absence_Table_Export_${new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14)}.xlsx`);
+
+                    const path = await window.api.saveFilePicker({
+                        title: 'Select Save Location for Employee Report',
+                        defaultPath: defaultPath,
+                        buttonLabel: 'Save Report',
+                        filters: [
+                            { name: 'Excel Files', extensions: ['xlsx'] },
+                            { name: 'All Files', extensions: ['*'] }
+                        ]
+                    })
+
+                    const exportResult = await window.api.generateAbsenceMatrixReport(tableExportJson);
+
+                    if (exportResult.success) {
+                        console.log(`Report successfully exported to: ${exportResult.message}`);
+                    } else {
+                        console.error(`Error exporting report: ${exportResult.message}`);
+                    }
+
+                } catch (error) {
+                    // Any DOM scraping exceptions or IPC rejections land safely here!
+                    console.error(`Failed to execute export pipeline: ${error.message}`);
+                }
+            };
+
+            executeExport();
+        }
+    }, [exportClickCount]);
+
     function TableData(tableData, daysArr) {
         return (
             <div className="matrix-table-scroll-wrapper">
-                <table>
+                <table id="employee-data-table">
                     <thead>
                         <tr>
                             <th>Name</th>
@@ -484,7 +575,10 @@ export const EmployeeDataSection = ({
     return (
         <>
             <div className="employee-data-section">
-                <button className="download-button">
+                <button
+                    className="download-button"
+                    onClick={() => setExportClickCount(exportClickCount + 1)}
+                >
                     <DownloadIcon size={24} />
                 </button>
                 {TableData(absenceTableJson, daysInMonth)}
@@ -499,6 +593,17 @@ export const EmployeeSummarySection = ({
 }) => {
     const [tableData, setTableData] = useState([]);
     const [typeList, setTypeList] = useState([]);
+    const [exportClickCount, setExportClickCount] = useState(0);
+    const [savePath, setSavePath] = useState(null);
+
+    useEffect(() => {
+        // Backup default path
+        window.api.getExportPath()
+            .then((path) => {
+                setSavePath(path);
+            })
+            .catch((error) => console.error(`Failed to retrieve export path: ${error}`));
+    }, []);
 
     useEffect(() => {
         // Safe check to prevent NaN query payload drops
@@ -512,6 +617,87 @@ export const EmployeeSummarySection = ({
             .then((data) => setTypeList(data || []))
             .catch((error) => console.error(`Database IPC retrieval failure: ${error}`));
     }, [absenceTableJson, month, year]);
+
+    // useEffect to handle grabbing the table data from UI for export
+    useEffect(() => {
+        if (exportClickCount > 0) {
+
+            const executeExport = async () => {
+                try {
+                    // 1. [Synchronous] Setup baseline metadata
+                    const tableExportJson = {
+                        meta: {
+                            month: month,
+                            year: year
+                        }
+                    };
+
+                    // 2. [Synchronous] Get HTML Table from DOM
+                    const tableElement = document.querySelector('.matrix-table-scroll-wrapper table#employee-summary-table');
+                    if (!tableElement) {
+                        throw new Error("Target matrix HTML table could not be found in the DOM.");
+                    }
+
+                    // 3. [Synchronous] Extract Table Headers and Rows
+                    const tableData = [];
+                    const headers = Array.from(tableElement.querySelectorAll('thead th')).map(th => th.textContent.trim());
+                    const rows = tableElement.querySelectorAll('tbody tr');
+
+                    // 4. [Synchronous] Iterate over each row and extract cell data
+                    rows.forEach(row => {
+                        const rowData = {};
+                        const cells = row.querySelectorAll('td');
+                        cells.forEach((cell, index) => {
+                            const cellText = cell.textContent.trim()
+                            const header = headers[index];
+                            if (header === 'Name') {
+                                rowData[header] = cellText;
+                            } else {
+                                rowData[header] = {
+                                    text: cellText === '-' ? '' : cellText,
+                                    highlight: cell.classList.contains('has-absence') ? 1 : 0
+                                };
+                            }
+                        });
+                        tableData.push(rowData);
+                    });
+
+                    // Add your scraped data to your meta object if your service needs it combined:
+                    tableExportJson.data = tableData;
+                    console.log("Export JSON payload prepared:", JSON.stringify(tableExportJson));
+
+                    // // 5. [Asynchronous] Request the export service to generate the Excel file
+                    // const startPath = await window.api.getExportPath();
+
+                    // const defaultPath = await window.api.getDefaultPath((startPath ? startPath : savePath), `Absence_Table_Export_${new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14)}.xlsx`);
+
+                    // const path = await window.api.saveFilePicker({
+                    //     title: 'Select Save Location for Employee Report',
+                    //     defaultPath: defaultPath,
+                    //     buttonLabel: 'Save Report',
+                    //     filters: [
+                    //         { name: 'Excel Files', extensions: ['xlsx'] },
+                    //         { name: 'All Files', extensions: ['*'] }
+                    //     ]
+                    // })
+
+                    // const exportResult = await window.api.generateAbsenceMatrixReport(tableExportJson);
+
+                    // if (exportResult.success) {
+                    //     console.log(`Report successfully exported to: ${exportResult.message}`);
+                    // } else {
+                    //     console.error(`Error exporting report: ${exportResult.message}`);
+                    // }
+
+                } catch (error) {
+                    // Any DOM scraping exceptions or IPC rejections land safely here!
+                    console.error(`Failed to execute export pipeline: ${error.message}`);
+                }
+            };
+
+            executeExport();
+        }
+    }, [exportClickCount]);
 
     const groupedTableRows = useMemo(() => {
         const employeeMap = {};
@@ -542,11 +728,14 @@ export const EmployeeSummarySection = ({
     return (
         <>
             <div className="employee-summary-section">
-                <button className="download-button">
+                <button
+                    className="download-button"
+                    onClick={() => setExportClickCount(exportClickCount + 1)}
+                >
                     <DownloadIcon size={24} />
                 </button>
                 <div className="matrix-table-scroll-wrapper">
-                    <table>
+                    <table id="employee-summary-table">
                         <thead>
                             <tr>
                                 <th>Name</th>
@@ -606,7 +795,18 @@ export const TypesDailySummarySection = ({
 }) => {
     const [tableData, setTableData] = useState([]);
     const [daysInMonth, setDaysInMonth] = useState([]);
+    const [exportClickCount, setExportClickCount] = useState(0);
+    const [savePath, setSavePath] = useState(null);
 
+    useEffect(() => {
+        // Backup default path
+        window.api.getExportPath()
+            .then((path) => {
+                setSavePath(path);
+            })
+            .catch((error) => console.error(`Failed to retrieve export path: ${error}`));
+    }, []);
+    
     useEffect(() => {
         // Prevent calling if dates are uninitialized
         if (month === undefined || year === undefined) return;
@@ -622,6 +822,87 @@ export const TypesDailySummarySection = ({
         const daysArray = Array.from({ length: totalDays }, (_, i) => i + 1);
         setDaysInMonth(daysArray);
     }, [absenceTableJson, month, year]);
+
+    // useEffect to handle grabbing the table data from UI for export
+    useEffect(() => {
+        if (exportClickCount > 0) {
+
+            const executeExport = async () => {
+                try {
+                    // 1. [Synchronous] Setup baseline metadata
+                    const tableExportJson = {
+                        meta: {
+                            month: month,
+                            year: year
+                        }
+                    };
+
+                    // 2. [Synchronous] Get HTML Table from DOM
+                    const tableElement = document.querySelector('.matrix-table-scroll-wrapper table#types-daily-table');
+                    if (!tableElement) {
+                        throw new Error("Target matrix HTML table could not be found in the DOM.");
+                    }
+
+                    // 3. [Synchronous] Extract Table Headers and Rows
+                    const tableData = [];
+                    const headers = Array.from(tableElement.querySelectorAll('thead th')).map(th => th.textContent.trim());
+                    const rows = tableElement.querySelectorAll('tbody tr');
+
+                    // 4. [Synchronous] Iterate over each row and extract cell data
+                    rows.forEach(row => {
+                        const rowData = {};
+                        const cells = row.querySelectorAll('td');
+                        cells.forEach((cell, index) => {
+                            const cellText = cell.textContent.trim()
+                            const header = headers[index];
+                            if (header === 'Absence Type') {
+                                rowData[header] = cellText;
+                            } else {
+                                rowData[header] = {
+                                    text: cellText === '-' ? '' : cellText,
+                                    highlight: cell.classList.contains('has-absence') ? 1 : 0
+                                };
+                            }
+                        });
+                        tableData.push(rowData);
+                    });
+
+                    // Add your scraped data to your meta object if your service needs it combined:
+                    tableExportJson.data = tableData;
+                    console.log("Export JSON payload prepared:", JSON.stringify(tableExportJson));
+
+                    // 5. [Asynchronous] Request the export service to generate the Excel file
+                    const startPath = await window.api.getExportPath();
+
+                    const defaultPath = await window.api.getDefaultPath((startPath ? startPath : savePath), `Types_Daily_Table_Export_${new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14)}.xlsx`);
+
+                    const path = await window.api.saveFilePicker({
+                        title: 'Select Save Location for Employee Report',
+                        defaultPath: defaultPath,
+                        buttonLabel: 'Save Report',
+                        filters: [
+                            { name: 'Excel Files', extensions: ['xlsx'] },
+                            { name: 'All Files', extensions: ['*'] }
+                        ]
+                    })
+
+                    const exportResult = await window.api.generateTypesDailyMatrixReport(tableExportJson);
+
+                    if (exportResult.success) {
+                        console.log(`Report successfully exported to: ${exportResult.message}`);
+                    } else {
+                        console.error(`Error exporting report: ${exportResult.message}`);
+                    }
+
+                } catch (error) {
+                    // Any DOM scraping exceptions or IPC rejections land safely here!
+                    console.error(`Failed to execute export pipeline: ${error.message}`);
+                }
+            };
+
+            executeExport();
+        }
+    }, [exportClickCount]);
 
     // Pivot flat query data into a fast O(1) keyed lookup map
     const pivotedRows = useMemo(() => {
@@ -650,16 +931,17 @@ export const TypesDailySummarySection = ({
         return Object.values(typeMap).sort((a, b) => a.code.localeCompare(b.code));
     }, [tableData]);
 
-    console.log(`Days Array: ${daysInMonth}`)
-
     return (
         <>
             <div className="types-daily-summary-section">
-                <button className="download-button">
+                <button
+                    className="download-button"
+                    onClick={() => setExportClickCount(exportClickCount + 1)}
+                >
                     <DownloadIcon size={24} />
                 </button>
                 <div className="matrix-table-scroll-wrapper">
-                    <table>
+                    <table id="types-daily-table">
                         <thead>
                             <tr>
                                 <th>Absence Type</th>
@@ -714,56 +996,110 @@ export const TypesMonthlySummarySection = ({
     month, year
 }) => {
     const [tableData, setTableData] = useState([]);
+    const [exportClickCount, setExportClickCount] = useState(0);
+    const [savePath, setSavePath] = useState(null);
 
+    useEffect(() => {
+        // Backup default path
+        window.api.getExportPath()
+            .then((path) => {
+                setSavePath(path);
+            })
+            .catch((error) => console.error(`Failed to retrieve export path: ${error}`));
+    }, []);
+    
     useEffect(() => {
         window.api.getTypeMonthlySummary(month + 1, year)
             .then((data) => setTableData(data))
             .catch((error) => console.error(`Database IPC retrieval failure: ${error}`));
     }, [absenceTableJson, month, year]);
 
-    const handleFileDownload = async () => {
-        if (!tableData || tableData.length === 0) return;
+    // useEffect to handle grabbing the table data from UI for export
+    useEffect(() => {
+        if (exportClickCount > 0) {
 
-        const table = document.getElementById('types-monthly-table')
-        const headers = Array.from(table.querySelectorAll("thead th"))
-            .map(th => th.innerText.trim());
+            const executeExport = async () => {
+                try {
+                    // 1. [Synchronous] Setup baseline metadata
+                    const tableExportJson = {
+                        meta: {
+                            month: month,
+                            year: year
+                        }
+                    };
 
-        const bodyRows = Array.from(table.querySelectorAll("tbody tr"));
+                    // 2. [Synchronous] Get HTML Table from DOM
+                    const tableElement = document.querySelector('.matrix-table-scroll-wrapper table#types-monthly-table');
+                    if (!tableElement) {
+                        throw new Error("Target matrix HTML table could not be found in the DOM.");
+                    }
 
-        const exportPayload = bodyRows.map((row) => {
-            const cells = Array.from(row.querySelectorAll("td"));
-            const rowItem = {};
+                    // 3. [Synchronous] Extract Table Headers and Rows
+                    const tableData = [];
+                    const headers = Array.from(tableElement.querySelectorAll('thead th')).map(th => th.textContent.trim());
+                    const rows = tableElement.querySelectorAll('tbody tr');
 
-            headers.forEach((header, index) => {
-                const cellText = cells[index]?.innerText.trim() || "";
+                    // 4. [Synchronous] Iterate over each row and extract cell data
+                    rows.forEach(row => {
+                        const rowData = {};
+                        const cells = row.querySelectorAll('td');
+                        cells.forEach((cell, index) => {
+                            const header = headers[index];
+                            if (header === 'Name') {
+                                rowData[header] = cell.textContent.trim();
+                            } else {
+                                rowData[header] = {
+                                    text: cell.textContent.trim(),
+                                    highlight: 0
+                                };
+                            }
+                        });
+                        tableData.push(rowData);
+                    });
 
-                // Convert count string strings back into numeric representations for Excel engine
-                const numericValue = Number(cellText);
-                rowItem[header] = (!isNaN(numericValue) && cellText !== "-") ? numericValue : cellText;
-            });
+                    // Add your scraped data to your meta object if your service needs it combined:
+                    tableExportJson.data = tableData;
+                    console.log("Export JSON payload prepared:", JSON.stringify(tableExportJson));
 
-            // 4. Re-inject visual highlight rules based on the scraped content properties
-            if (rowItem['Monthly Count'] > 0) {
-                rowItem._rowColor = 'FFE6F4EA'; // Soft green highlight flag
-            }
+                    // // 5. [Asynchronous] Request the export service to generate the Excel file
+                    // const startPath = await window.api.getExportPath();
 
-            return rowItem;
-        });
+                    // const defaultPath = await window.api.getDefaultPath((startPath ? startPath : savePath), `Absence_Table_Export_${new Date().toISOString().replace(/[^0-9]/g, '').slice(0, 14)}.xlsx`);
 
-        console.log(`
-            Export Payload:
-            ${JSON.stringify(exportPayload)}
-            `)
-    }
+                    // const path = await window.api.saveFilePicker({
+                    //     title: 'Select Save Location for Employee Report',
+                    //     defaultPath: defaultPath,
+                    //     buttonLabel: 'Save Report',
+                    //     filters: [
+                    //         { name: 'Excel Files', extensions: ['xlsx'] },
+                    //         { name: 'All Files', extensions: ['*'] }
+                    //     ]
+                    // })
+
+                    // const exportResult = await window.api.generateAbsenceMatrixReport(tableExportJson);
+
+                    // if (exportResult.success) {
+                    //     console.log(`Report successfully exported to: ${exportResult.message}`);
+                    // } else {
+                    //     console.error(`Error exporting report: ${exportResult.message}`);
+                    // }
+
+                } catch (error) {
+                    // Any DOM scraping exceptions or IPC rejections land safely here!
+                    console.error(`Failed to execute export pipeline: ${error.message}`);
+                }
+            };
+
+            executeExport();
+        }
+    }, [exportClickCount]);
 
     return (
         <>
             <div className="types-monthly-summary-section">
                 <button
                     className="download-button"
-                    onClick={handleFileDownload}
-                    disabled={tableData.length === 0}
-                    title="Export table to Excel"
+                    onClick={() => setExportClickCount(exportClickCount + 1)}
                 >
                     <DownloadIcon size={24} />
                 </button>
