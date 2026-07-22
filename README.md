@@ -5,7 +5,8 @@
 
 ~~Following current development in the branch Migration-to-new-architecture~~
 
-Migrating app to a Tauri architecture, working on incremental improvements, and then reconsidering data storage if needed.
+~~Migrating app to a Tauri architecture, working on incremental improvements, and then reconsidering data storage if needed.~~
+Final migration to Electron Forge w/ Webpack and SQLite; completely rebuilt frontend in ReactJS
 
 ### Description
 This application is designed to track absences and give high level reporting capabilities on absences. Originally made to help a friend manage employees, this app is flexible enough to be used in many absence contexts.
