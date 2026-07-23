@@ -6,24 +6,14 @@ import fs from 'node:fs';
 export class DbService {
     #db;
 
-    constructor() {
-        const filename = fileURLToPath(import.meta.url);
-        const dirname = path.dirname(filename);
-        const localDbPath = path.resolve(dirname, 'app.db');
-
-        const resourceDbPath = process.resourcesPath
-            ? path.join(process.resourcesPath, 'app.db')
-            : localDbPath;
-
-        this.dbPath = fs.existsSync(resourceDbPath)
-            ? resourceDbPath
-            : localDbPath;
-
-        try {
-            this.#db = new DatabaseSync(this.dbPath);
-        } catch (error) {
-            console.error(`Failed connection to DB: ${this.dbPath}`, error);
+    constructor(dbPath) {
+        if (typeof dbPath !== 'string' || dbPath.length === 0) {
+            throw new TypeError('DB Service requires a database file path');
         }
+
+        this.dbPath = dbPath
+
+        this.#db = new DatabaseSync(this.dbPath);
     }
 
     /* Audit Record Insert */

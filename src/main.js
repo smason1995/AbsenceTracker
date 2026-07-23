@@ -6,6 +6,12 @@ if (require('electron-squirrel-startup')) {
   app.quit();
 }
 
+function getResourcePath(fileName) {
+  return app.isPackaged
+    ? path.join(process.resourcesPath, fileName)
+    : path.join(__dirname, '..', '..', 'src', 'backend', fileName);
+}
+
 import { DbService } from './backend/dbservice.js';
 import { ExportService } from './backend/exportservice.js';
 
@@ -34,7 +40,7 @@ ipcMain.handle('dialog:saveExplorer', async (event, options = {}) => {
  */
 let dbService;
 try {
-  dbService = new DbService();
+  dbService = new DbService(getResourcePath('app.db'));
 } catch (error) {
   console.error(`Critical: Failed to start DB Service: ${error}`);
 }
