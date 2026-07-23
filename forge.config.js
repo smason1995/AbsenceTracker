@@ -1,11 +1,22 @@
 const { FusesPlugin } = require('@electron-forge/plugin-fuses');
 const { FuseV1Options, FuseVersion } = require('@electron/fuses');
+const path = require('path');
+const fs = require('fs');
+
+// 1. Define absolute path and create a circuit breaker
+const dbPath = path.join(__dirname, 'src', 'backend', 'app.db');
+
+if (!fs.existsSync(dbPath)) {
+  console.error(`\n[FATAL BUILD ERROR] Database not found at: ${dbPath}`);
+  console.error(`Double-check directory casing, as the filesystem is case-sensitive.\n`);
+  process.exit(1);
+}
 
 module.exports = {
   packagerConfig: {
     asar: true,
     extraResources: [
-      'src/backend/app.db'
+      './src/backend/app.db'
     ]
   },
   rebuildConfig: {},
@@ -24,10 +35,6 @@ module.exports = {
     },
     {
       name: '@electron-forge/maker-rpm',
-      config: {},
-    },
-    {
-      name: 'electron-forge-maker-appimage',
       config: {},
     },
   ],
@@ -67,4 +74,18 @@ module.exports = {
       [FuseV1Options.OnlyLoadAppFromAsar]: true,
     }),
   ],
+  hooks: {
+    // 2. The Fallback: Manually enforce the file copy before installers are made
+    postPackage: async (config, packageResult) => {
+      // packageResult.outputPaths[0] points to out/absencetracker-win32-x64
+      const resourcesDir = path.join(packageResult.outputPaths[0], 'resources');
+      const targetDbPath = path.join(resourcesDir, 'app.db');
+
+      if (!fs.existsSync(targetDbPath)) {
+        console.log(`\n[HOOK] Webpack stripped extraResource. Manually copying app.db to ${targetDbPath}...`);
+        fs.copyFileSync(dbPath, targetDbPath);
+        console.log('[HOOK] Database copy complete.\n');
+      }
+    }
+  }
 };
